@@ -40,9 +40,11 @@ osint:
   #   synthetic  a fabricated demo persona (no real person's data)
   #   consented  a real person with documented, scoped, revocable consent
   #
-  # Example (COMMENTED OUT):
-  #   - name: demo-persona
-  #     kind: synthetic
-  #     authorized: true
-  #     notes: "Fabricated persona for demonstration; not a real individual."
-  subjects: []
+  subjects:
+    - name: demo-persona
+      kind: synthetic
+      authorized: true
+      notes: >
+        Fabricated persona "Jordan Rivera" for demonstration; NOT a real
+        individual. See personas/synthetic-persona.md. Safe to include here
+        because it is synthetic (rule 3).

@@ -59,7 +59,7 @@ See [AGENTS.md](AGENTS.md) for the build order and current phase.
 - [x] Recon agent
 - [x] Vulnerability analysis agent
 - [x] Reporting agent (Module 1 MVP)
-- [ ] Synthetic persona + OSINT manual assessment (Module 2 MVP)
+- [x] Synthetic persona + OSINT manual assessment (Module 2 MVP)
 - [ ] Active Directory lab
 - [ ] Exploit agent with guardrails
 - [ ] OSINT module automation
@@ -121,6 +121,17 @@ CVE matching uses an offline curated database (`data/cve_db.yaml`) via a
 pluggable source — a live NVD/CPE source can be dropped in later. A worked
 sample report (from synthetic data) lives in
 [`reports/samples/`](reports/samples/metasploitable2-sample.md).
+
+### OSINT module (Module 2)
+
+The methodology is documented in
+[docs/osint-methodology.md](docs/osint-methodology.md) (footprint → breach
+check → attack-scenario mapping → 0–100 risk score → remediation), applied
+only to consent-gated subjects in `scope.yaml`. A worked **manual** assessment
+against a fabricated persona is in
+[reports/samples/osint-synthetic-persona.md](reports/samples/osint-synthetic-persona.md)
+(the automation is a later phase). The persona is entirely synthetic —
+[personas/synthetic-persona.md](personas/synthetic-persona.md).
 
 ### Tests
 
