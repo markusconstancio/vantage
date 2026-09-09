@@ -16,9 +16,12 @@ import argparse
 import json
 import sys
 
+from .agents.ad_enum import ADEnumAgent
 from .agents.recon import ReconAgent, ReconError
 from .agents.reporting import ReportingAgent
 from .agents.vuln import VulnAnalysisAgent
+from .osint.assess import OsintAgent
+from .osint.persona import Persona
 from .scope import OutOfScopeError, Scope, ScopeConfigError
 
 
@@ -66,6 +69,46 @@ def _print_human(result: dict) -> None:
             ver = p.get("version", "")
             detail = " ".join(x for x in (svc, prod, ver) if x)
             print(f"  {p['port']}/{p['protocol']:<3} {p['state']:<7} {detail}")
+
+
+def _cmd_ad_enum(args) -> int:
+    try:
+        scope = Scope.load(args.scope)
+    except ScopeConfigError as exc:
+        print(f"scope error: {exc}", file=sys.stderr)
+        return 2
+    agent = ADEnumAgent(scope=scope)
+    try:
+        result = agent.enumerate(args.target, dry_run=args.dry_run)
+    except OutOfScopeError as exc:
+        print(f"REFUSED: {exc}", file=sys.stderr)
+        return 3
+    except ReconError as exc:
+        print(f"ad-enum error: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, indent=2, default=str))
+    return 0
+
+
+def _cmd_osint(args) -> int:
+    persona = Persona.load(args.persona)
+    if args.remediated:
+        persona = persona.with_posture(
+            mfa_enabled=True, passwords_unique=True, phone_public=False
+        )
+    agent = OsintAgent()
+    assessment = agent.assess(persona)
+    if args.markdown:
+        out = agent.render_markdown(assessment)
+        if args.output:
+            with open(args.output, "w", encoding="utf-8") as fh:
+                fh.write(out)
+            print(f"wrote {args.output}", file=sys.stderr)
+        else:
+            print(out)
+    else:
+        print(json.dumps(assessment, indent=2, default=str))
+    return 0
 
 
 def _load_recon_json(path: str) -> dict:
@@ -119,6 +162,20 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--cve-db", default=None, help="path to cve_db.yaml")
     report.add_argument("-o", "--output", default=None, help="write report to file")
     report.set_defaults(func=_cmd_report)
+
+    ad = sub.add_parser("ad-enum", help="SMB/AD enumeration of an authorized target")
+    ad.add_argument("target", help="IP or hostname (must be in scope.yaml)")
+    ad.add_argument("--dry-run", action="store_true",
+                    help="show the command without running nmap")
+    ad.set_defaults(func=_cmd_ad_enum)
+
+    osint = sub.add_parser("osint", help="score a consent-gated subject's risk")
+    osint.add_argument("persona", help="path to a persona YAML")
+    osint.add_argument("--remediated", action="store_true",
+                       help="score the post-remediation posture (before/after)")
+    osint.add_argument("--markdown", action="store_true", help="render Markdown")
+    osint.add_argument("-o", "--output", default=None, help="write output to file")
+    osint.set_defaults(func=_cmd_osint)
 
     return parser
 

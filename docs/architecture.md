@@ -39,6 +39,11 @@ vantage is two modules sharing one pattern: **orchestrator → specialist agents
   `lookup(product, version)` interface drops in without touching the agent.
 - **`vantage.agents.reporting`** — consolidates recon + findings into a
   structured Markdown report (summary, open-services table, ranked findings).
+- **`vantage.agents.ad_enum`** — SMB/AD enumeration for Windows lab targets.
+  Wraps nmap SMB NSE scripts (OS/domain discovery, shares, users, security
+  mode), scope-gated and audited like recon. Enumeration only — no auth, no
+  brute-forcing, no exploitation. Parses host-script XML into structured
+  findings.
 - **`vantage.orchestrator`** — wires recon → analyze → report. The exploit
   stage is intentionally not implemented (safety-framework.md rule 2).
 - **`vantage.cli`** — `recon <target>`, `analyze <recon.json|->`,
@@ -70,12 +75,27 @@ known CVEs, emitting ranked findings that the reporting agent renders. See
 [`reports/samples/`](../reports/samples/metasploitable2-sample.md) for a worked
 example generated from synthetic data.
 
-## Module 2 — OSINT (later phase)
+## Module 2 — OSINT (`vantage.osint`)
 
-Footprint scan → breach check (HIBP) → attack-scenario mapping → risk score +
-remediation report. Subjects are consent-gated through the same `scope.yaml`
-(`osint.subjects`, each with a `kind` of self/synthetic/consented). Not yet
-implemented.
+Footprint → breach check → attack-scenario mapping → 0–100 risk score →
+remediation. Subjects are consent-gated through `scope.yaml` (`osint.subjects`,
+each `kind` self/synthetic/consented); only synthetic personas are committed.
+
+- **`persona.py`** — the subject model + YAML loader; `Posture` holds the
+  mutable security flags (MFA, unique passwords, phone public) that remediation
+  changes, enabling before/after scoring.
+- **`breach.py`** — pluggable `BreachSource`; the offline `StaticBreachSource`
+  reads breaches off the persona. A HIBP-backed source implements the same
+  interface and records only exposure metadata, never breached passwords.
+- **`scoring.py`** — the 6-factor weighted model (see osint-methodology.md).
+  Derives each 0–3 rating from persona facts + posture, normalises to 0–100,
+  and bands the result.
+- **`assess.py`** — `OsintAgent` orchestrates the pipeline and renders the
+  Markdown report (factor breakdown, scenarios, remediation).
+- **CLI** — `osint <persona.yaml> [--remediated] [--markdown]`.
+
+See the [methodology](osint-methodology.md) and the
+[before/after demo](../reports/samples/remediation-demo.md).
 
 ## Where it runs
 

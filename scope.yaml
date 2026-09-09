@@ -31,6 +31,16 @@ red_team:
   #     notes: >
   #       Intentionally vulnerable training VM. VirtualBox host-only network,
   #       no route to the internet or any production system.
+  #
+  #   - name: ad-dc01                # AD lab domain controller (for ad-enum)
+  #     address: 192.168.56.20
+  #     type: host
+  #     authorized: true
+  #     notes: "Lab Windows DC, isolated host-only network."
+  #   - name: ad-lab-net             # or authorize the whole lab subnet
+  #     address: 192.168.56.0/24
+  #     type: network
+  #     authorized: true
   targets: []
 
 osint:

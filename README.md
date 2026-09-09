@@ -60,11 +60,11 @@ See [AGENTS.md](AGENTS.md) for the build order and current phase.
 - [x] Vulnerability analysis agent
 - [x] Reporting agent (Module 1 MVP)
 - [x] Synthetic persona + OSINT manual assessment (Module 2 MVP)
-- [ ] Active Directory lab
-- [ ] Exploit agent with guardrails
-- [ ] OSINT module automation
-- [ ] Before/after remediation demo
-- [ ] Full documentation pass
+- [x] Active Directory lab enumeration (`ad-enum`)
+- [ ] Exploit agent with guardrails — **guardrail design pending review** (no code yet), see [docs/exploit-agent-guardrails.md](docs/exploit-agent-guardrails.md)
+- [x] OSINT module automation (`vantage.osint`)
+- [x] Before/after remediation demo
+- [x] Full documentation pass
 
 ## Setup
 
@@ -117,6 +117,16 @@ python -m vantage report  scan-output/meta.json -o report.md
 python -m vantage recon 192.168.56.101 --json | python -m vantage report -
 ```
 
+### Active Directory / SMB enumeration
+
+```bash
+python -m vantage ad-enum 192.168.56.20        # scope-gated; enumeration only
+python -m vantage ad-enum 192.168.56.20 --dry-run
+```
+
+Wraps nmap SMB NSE scripts (OS/domain discovery, shares, users, security mode).
+No authentication, brute-forcing, or exploitation.
+
 CVE matching uses an offline curated database (`data/cve_db.yaml`) via a
 pluggable source — a live NVD/CPE source can be dropped in later. A worked
 sample report (from synthetic data) lives in
@@ -129,9 +139,21 @@ The methodology is documented in
 check → attack-scenario mapping → 0–100 risk score → remediation), applied
 only to consent-gated subjects in `scope.yaml`. A worked **manual** assessment
 against a fabricated persona is in
-[reports/samples/osint-synthetic-persona.md](reports/samples/osint-synthetic-persona.md)
-(the automation is a later phase). The persona is entirely synthetic —
+[reports/samples/osint-synthetic-persona.md](reports/samples/osint-synthetic-persona.md).
+The persona is entirely synthetic —
 [personas/synthetic-persona.md](personas/synthetic-persona.md).
+
+The scoring is also **automated** (`vantage.osint`):
+
+```bash
+python -m vantage osint personas/jordan-rivera.yaml --markdown              # 73/100 High
+python -m vantage osint personas/jordan-rivera.yaml --remediated --markdown # 47/100 Moderate
+```
+
+The automated scorer reproduces the manual 73/100 and quantifies remediation —
+see the [before/after demo](reports/samples/remediation-demo.md). No breached
+passwords are ever stored; a live HIBP breach source drops in behind the same
+interface as the offline one.
 
 ### Tests
 

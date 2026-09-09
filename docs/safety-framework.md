@@ -25,10 +25,12 @@ Every exploitation action requires explicit, in-the-moment human confirmation â€
 never a blanket "yes" at session start.
 
 **Enforced by:** not yet applicable â€” the exploit agent is **not implemented**
-and is deliberately deferred to a later phase (see build order). When it is
-built, confirmation will be a per-action prompt that cannot be satisfied by a
-config flag or environment variable. Until then, no exploitation code exists in
-this repo.
+and is deliberately deferred to a later phase (see build order). The proposed
+guardrails are written up for review in
+[exploit-agent-guardrails.md](exploit-agent-guardrails.md); confirmation will be
+a per-action interactive prompt that cannot be satisfied by a config flag,
+environment variable, or non-interactive input. Until that design is approved
+and built, no exploitation code exists in this repo.
 
 ### 3. The OSINT module is consent-gated
 It runs only against: the author (self), a synthetic demo persona, or a real
