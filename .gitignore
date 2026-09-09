@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- vantage ---
+# Audit logs may reference real lab targets — keep them out of git.
+logs/
+# Real assessment output stays private (rule 5). Only samples are committed.
+reports/real/
+# Raw scan artifacts.
+*.nmap
+scan-output/

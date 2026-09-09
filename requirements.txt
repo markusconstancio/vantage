@@ -1,0 +1,5 @@
+# Runtime dependencies.
+PyYAML>=6.0
+
+# System dependency (not pip-installable): nmap must be installed on the host
+# that runs the recon agent, e.g.:  sudo apt install nmap

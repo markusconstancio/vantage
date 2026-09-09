@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SYNTHETIC SAMPLE nmap output for parser tests only.
+  This is fabricated, Metasploitable2-shaped data (a well-known intentionally
+  vulnerable training VM). It is NOT the result of scanning any real host and
+  contains no real target's data. The address below is RFC 5737 documentation
+  space (192.0.2.0/24), used precisely because it is reserved for examples.
+-->
+<nmaprun scanner="nmap" args="nmap -sV -sC -oX - 192.0.2.10" start="1700000000" version="7.94">
+  <host starttime="1700000000" endtime="1700000100">
+    <status state="up" reason="arp-response"/>
+    <address addr="192.0.2.10" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="metasploitable.localdomain" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="21">
+        <state state="open" reason="syn-ack"/>
+        <service name="ftp" product="vsftpd" version="2.3.4" method="probed" conf="10"/>
+      </port>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssh" product="OpenSSH" version="4.7p1 Debian 8ubuntu1" extrainfo="protocol 2.0" method="probed" conf="10"/>
+      </port>
+      <port protocol="tcp" portid="23">
+        <state state="open" reason="syn-ack"/>
+        <service name="telnet" product="Linux telnetd" method="probed" conf="10"/>
+      </port>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="Apache httpd" version="2.2.8" extrainfo="(Ubuntu) DAV/2" method="probed" conf="10"/>
+      </port>
+      <port protocol="tcp" portid="3306">
+        <state state="open" reason="syn-ack"/>
+        <service name="mysql" product="MySQL" version="5.0.51a-3ubuntu5" method="probed" conf="10"/>
+      </port>
+      <port protocol="tcp" portid="445">
+        <state state="open" reason="syn-ack"/>
+        <service name="netbios-ssn" product="Samba smbd" version="3.0.20-Debian" method="probed" conf="10"/>
+      </port>
+    </ports>
+  </host>
+</nmaprun>
