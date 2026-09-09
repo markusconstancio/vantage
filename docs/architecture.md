@@ -39,6 +39,10 @@ vantage is two modules sharing one pattern: **orchestrator → specialist agents
   `lookup(product, version)` interface drops in without touching the agent.
 - **`vantage.agents.reporting`** — consolidates recon + findings into a
   structured Markdown report (summary, open-services table, ranked findings).
+- **`vantage.report_html`** — renders both the findings report and the OSINT
+  assessment as self-contained, theme-aware (light/dark) HTML, using the
+  validated status palette (severity/risk, always with a text label) and a
+  single blue ramp for magnitude bars. All external strings are HTML-escaped.
 - **`vantage.agents.ad_enum`** — SMB/AD enumeration for Windows lab targets.
   Wraps nmap SMB NSE scripts (OS/domain discovery, shares, users, security
   mode), scope-gated and audited like recon. Enumeration only — no auth, no

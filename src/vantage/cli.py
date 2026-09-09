@@ -98,7 +98,16 @@ def _cmd_osint(args) -> int:
         )
     agent = OsintAgent()
     assessment = agent.assess(persona)
-    if args.markdown:
+    if args.html:
+        from .report_html import render_osint_html
+        out = render_osint_html(assessment)
+        if args.output:
+            with open(args.output, "w", encoding="utf-8") as fh:
+                fh.write(out)
+            print(f"wrote {args.output}", file=sys.stderr)
+        else:
+            print(out)
+    elif args.markdown:
         out = agent.render_markdown(assessment)
         if args.output:
             with open(args.output, "w", encoding="utf-8") as fh:
@@ -128,13 +137,17 @@ def _cmd_analyze(args) -> int:
 def _cmd_report(args) -> int:
     recon_result = _load_recon_json(args.recon_json)
     analysis = VulnAnalysisAgent.with_static_db(args.cve_db).analyze(recon_result)
-    markdown = ReportingAgent().render_markdown(recon_result, analysis)
+    if args.html:
+        from .report_html import render_findings_html
+        out = render_findings_html(recon_result, analysis)
+    else:
+        out = ReportingAgent().render_markdown(recon_result, analysis)
     if args.output:
         with open(args.output, "w", encoding="utf-8") as fh:
-            fh.write(markdown)
+            fh.write(out)
         print(f"wrote {args.output}", file=sys.stderr)
     else:
-        print(markdown)
+        print(out)
     return 0
 
 
@@ -160,6 +173,7 @@ def build_parser() -> argparse.ArgumentParser:
     report = sub.add_parser("report", help="render a Markdown findings report")
     report.add_argument("recon_json", help="recon JSON file, or - for stdin")
     report.add_argument("--cve-db", default=None, help="path to cve_db.yaml")
+    report.add_argument("--html", action="store_true", help="render styled HTML")
     report.add_argument("-o", "--output", default=None, help="write report to file")
     report.set_defaults(func=_cmd_report)
 
@@ -174,6 +188,7 @@ def build_parser() -> argparse.ArgumentParser:
     osint.add_argument("--remediated", action="store_true",
                        help="score the post-remediation posture (before/after)")
     osint.add_argument("--markdown", action="store_true", help="render Markdown")
+    osint.add_argument("--html", action="store_true", help="render styled HTML")
     osint.add_argument("-o", "--output", default=None, help="write output to file")
     osint.set_defaults(func=_cmd_osint)
 

@@ -115,6 +115,9 @@ python -m vantage report  scan-output/meta.json -o report.md
 
 # Or pipe directly:
 python -m vantage recon 192.168.56.101 --json | python -m vantage report -
+
+# Styled, self-contained HTML report (theme-aware, severity-coded):
+python -m vantage report scan-output/meta.json --html -o report.html
 ```
 
 ### Active Directory / SMB enumeration
@@ -148,7 +151,13 @@ The scoring is also **automated** (`vantage.osint`):
 ```bash
 python -m vantage osint personas/jordan-rivera.yaml --markdown              # 73/100 High
 python -m vantage osint personas/jordan-rivera.yaml --remediated --markdown # 47/100 Moderate
+python -m vantage osint personas/jordan-rivera.yaml --html -o risk.html     # styled report + risk gauge
 ```
+
+Both modules render **styled, self-contained HTML** (`--html`) — theme-aware
+(light/dark), severity-coded, with a risk gauge and factor bars for OSINT.
+Sample HTML lives beside the Markdown in
+[`reports/samples/`](reports/samples/).
 
 The automated scorer reproduces the manual 73/100 and quantifies remediation —
 see the [before/after demo](reports/samples/remediation-demo.md). No breached

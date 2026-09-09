@@ -1,0 +1,94 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Red Team Findings — 192.0.2.10</title><style>
+:root {
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e;
+  --muted:#898781; --grid:#e1e0d9; --border:rgba(11,11,11,0.10);
+  --track:#eceae4; --series-1:#2a78d6;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --shadow:0 1px 2px rgba(11,11,11,.04),0 8px 24px rgba(11,11,11,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7;
+    --muted:#898781; --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+    --track:#2c2c2a; --series-1:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.4);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55;
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:880px;margin:0 auto;padding:40px 20px 72px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  box-shadow:var(--shadow);padding:36px 40px;}
+header.rpt{display:flex;align-items:flex-start;gap:16px;margin-bottom:8px;}
+header.rpt .logo{flex:none;width:40px;height:40px;color:var(--series-1);}
+h1{font-size:24px;line-height:1.2;margin:0 0 2px;letter-spacing:-.01em;}
+.sub{color:var(--ink-2);font-size:14px;margin:0;}
+.meta{color:var(--muted);font-size:12.5px;margin-top:10px;
+  display:flex;flex-wrap:wrap;gap:6px 18px;}
+.meta b{color:var(--ink-2);font-weight:600;}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  margin:38px 0 14px;font-weight:600;}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;}
+.tile{background:var(--page);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;}
+.tile .n{font-size:26px;font-weight:650;letter-spacing:-.02em;}
+.tile .l{font-size:12px;color:var(--muted);margin-top:2px;}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+  padding:3px 9px 3px 8px;border-radius:999px;border:1px solid var(--border);
+  white-space:nowrap;}
+.chip .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c);}
+.chip.sev{color:var(--ink-2);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:2px;}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--muted);font-weight:600;padding:0 12px 8px;border-bottom:1px solid var(--grid);}
+td{padding:10px 12px;border-bottom:1px solid var(--grid);vertical-align:top;
+  font-variant-numeric:tabular-nums;}
+tr:last-child td{border-bottom:none;}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;}
+.finding{border:1px solid var(--border);border-left:3px solid var(--c);border-radius:12px;
+  padding:16px 18px;margin-bottom:12px;background:var(--page);}
+.finding h3{margin:0 0 8px;font-size:15px;display:flex;align-items:center;
+  gap:10px;flex-wrap:wrap;}
+.finding h3 .cve{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--ink-2);}
+.finding .row{font-size:13px;color:var(--ink-2);margin:3px 0;}
+.finding a{color:var(--series-1);text-decoration:none;}
+.finding a:hover{text-decoration:underline;}
+.rank{flex:none;width:22px;height:22px;border-radius:50%;background:var(--track);
+  color:var(--ink-2);font-size:12px;font-weight:700;display:grid;place-items:center;}
+/* risk hero + gauge */
+.hero{display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+  padding:22px 24px;border:1px solid var(--border);border-radius:14px;background:var(--page);}
+.hero .score{font-size:56px;font-weight:680;letter-spacing:-.03em;line-height:1;color:var(--c);}
+.hero .of{font-size:20px;color:var(--muted);font-weight:500;}
+.hero .band{margin-top:6px;}
+.gauge{flex:1;min-width:240px;}
+.gauge .track{position:relative;height:12px;background:var(--track);border-radius:999px;overflow:hidden;}
+.gauge .fill{position:absolute;left:0;top:0;bottom:0;background:var(--c);
+  border-radius:999px 4px 4px 999px;}
+.gauge .ticks{display:flex;justify-content:space-between;margin-top:7px;
+  font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}
+/* factor bars */
+.bars{display:flex;flex-direction:column;gap:11px;}
+.bar-row{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;}
+.bar-row .name{font-size:13px;color:var(--ink-2);text-transform:capitalize;}
+.bar-track{position:relative;height:22px;background:var(--track);border-radius:6px;}
+.bar-fill{position:absolute;left:0;top:0;bottom:0;background:var(--series-1);
+  border-radius:6px 4px 4px 6px;min-width:3px;}
+.bar-val{position:absolute;top:0;bottom:0;display:flex;align-items:center;
+  padding-left:9px;font-size:12px;font-weight:600;color:#fff;
+  font-variant-numeric:tabular-nums;}
+.scen{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;}
+.scen li{border:1px solid var(--border);border-radius:10px;padding:11px 14px;
+  background:var(--page);font-size:13.5px;}
+.scen .en{color:var(--muted);font-size:12.5px;margin-top:2px;}
+ol.rem{margin:0;padding-left:20px;font-size:13.5px;}
+ol.rem li{margin:6px 0;}
+footer.rpt{margin-top:32px;padding-top:16px;border-top:1px solid var(--grid);
+  color:var(--muted);font-size:12px;}
+.note{background:var(--page);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;font-size:12.5px;color:var(--ink-2);margin-bottom:22px;}
+</style></head><body><div class="wrap"><div class="card"><header class="rpt"><svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg><div><h1>Red Team Findings</h1><p class="sub">192.0.2.10</p></div></header><div class="meta"><span><b>Scope:</b> metasploitable2 (synthetic sample)</span><span><b>Scanned:</b> SAMPLE — synthetic data, not a real scan</span></div><h2>Summary</h2><div class="tiles"><div class="tile"><div class="n">6</div><div class="l">Open services</div></div><div class="tile"><div class="n">4</div><div class="l">Findings</div></div><div class="tile"><div class="n">4</div><div class="l">Public exploit</div></div><div class="tile"><div class="n" style="font-size:15px;padding-top:6px"><span class="chip sev" style="--c:var(--critical)"><span class="dot"></span>Critical</span></div><div class="l">Top severity · CVSS 10.0</div></div></div><h2>Open services</h2><table><thead><tr><th>Host</th><th>Port</th><th>Service</th><th>Product</th><th>Version</th></tr></thead><tbody><tr><td class="mono">192.0.2.10</td><td class="mono">21/tcp</td><td>ftp</td><td>vsftpd</td><td class="mono">2.3.4</td></tr><tr><td class="mono">192.0.2.10</td><td class="mono">22/tcp</td><td>ssh</td><td>OpenSSH</td><td class="mono">4.7p1 Debian 8ubuntu1</td></tr><tr><td class="mono">192.0.2.10</td><td class="mono">23/tcp</td><td>telnet</td><td>Linux telnetd</td><td class="mono"></td></tr><tr><td class="mono">192.0.2.10</td><td class="mono">80/tcp</td><td>http</td><td>Apache httpd</td><td class="mono">2.2.8</td></tr><tr><td class="mono">192.0.2.10</td><td class="mono">3306/tcp</td><td>mysql</td><td>MySQL</td><td class="mono">5.0.51a-3ubuntu5</td></tr><tr><td class="mono">192.0.2.10</td><td class="mono">445/tcp</td><td>netbios-ssn</td><td>Samba smbd</td><td class="mono">3.0.20-Debian</td></tr></tbody></table><h2>Findings — ranked by exploitability</h2><div class="finding" style="--c:var(--critical)"><h3><span class="rank">1</span><span class="cve">CVE-2011-2523</span> vsftpd 2.3.4 backdoor command execution</h3><div class="row"><span class="chip sev" style="--c:var(--critical)"><span class="dot"></span>Critical</span> <span style="color:var(--muted)">CVSS 10.0 · public exploit</span></div><div class="row"><b>Affected:</b> vsftpd 2.3.4 on 192.0.2.10:21/tcp (ftp)</div><div class="row">↗ <a href="https://nvd.nist.gov/vuln/detail/CVE-2011-2523">https://nvd.nist.gov/vuln/detail/CVE-2011-2523</a></div></div><div class="finding" style="--c:var(--serious)"><h3><span class="rank">2</span><span class="cve">CVE-2011-3192</span> Apache HTTPD Range header denial of service (Apache Killer)</h3><div class="row"><span class="chip sev" style="--c:var(--serious)"><span class="dot"></span>High</span> <span style="color:var(--muted)">CVSS 7.8 · public exploit</span></div><div class="row"><b>Affected:</b> Apache httpd 2.2.8 on 192.0.2.10:80/tcp (http)</div><div class="row">↗ <a href="https://nvd.nist.gov/vuln/detail/CVE-2011-3192">https://nvd.nist.gov/vuln/detail/CVE-2011-3192</a></div></div><div class="finding" style="--c:var(--warning)"><h3><span class="rank">3</span><span class="cve">CVE-2007-2447</span> Samba &quot;username map script&quot; remote command execution</h3><div class="row"><span class="chip sev" style="--c:var(--warning)"><span class="dot"></span>Medium</span> <span style="color:var(--muted)">CVSS 6.0 · public exploit</span></div><div class="row"><b>Affected:</b> Samba smbd 3.0.20-Debian on 192.0.2.10:445/tcp (netbios-ssn)</div><div class="row">↗ <a href="https://nvd.nist.gov/vuln/detail/CVE-2007-2447">https://nvd.nist.gov/vuln/detail/CVE-2007-2447</a></div></div><div class="finding" style="--c:var(--warning)"><h3><span class="rank">4</span><span class="cve">CVE-2018-15473</span> OpenSSH username enumeration</h3><div class="row"><span class="chip sev" style="--c:var(--warning)"><span class="dot"></span>Medium</span> <span style="color:var(--muted)">CVSS 5.3 · public exploit</span></div><div class="row"><b>Affected:</b> OpenSSH 4.7p1 Debian 8ubuntu1 on 192.0.2.10:22/tcp (ssh)</div><div class="row">↗ <a href="https://nvd.nist.gov/vuln/detail/CVE-2018-15473">https://nvd.nist.gov/vuln/detail/CVE-2018-15473</a></div></div><footer class="rpt">Generated by vantage · enumeration and analysis only — no exploitation was performed.</footer></div></div></body></html>
