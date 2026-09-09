@@ -57,8 +57,8 @@ See [AGENTS.md](AGENTS.md) for the build order and current phase.
 
 - [x] Repo structure + safety framework
 - [x] Recon agent
-- [ ] Vulnerability analysis agent
-- [ ] Reporting agent (Module 1 MVP)
+- [x] Vulnerability analysis agent
+- [x] Reporting agent (Module 1 MVP)
 - [ ] Synthetic persona + OSINT manual assessment (Module 2 MVP)
 - [ ] Active Directory lab
 - [ ] Exploit agent with guardrails
@@ -102,6 +102,25 @@ python -m vantage recon 192.168.56.101 --json > scan-output/meta.json
 
 Anything not listed in `scope.yaml` is refused before nmap is ever invoked.
 Every run is appended to `logs/audit.log` (git-ignored).
+
+### Full red-team pipeline (recon → analysis → report)
+
+`analyze` and `report` consume saved recon JSON, so they run anywhere:
+
+```bash
+# On the lab host, or from saved output:
+python -m vantage recon 192.168.56.101 --json > scan-output/meta.json
+python -m vantage analyze scan-output/meta.json            # ranked CVE findings (JSON)
+python -m vantage report  scan-output/meta.json -o report.md
+
+# Or pipe directly:
+python -m vantage recon 192.168.56.101 --json | python -m vantage report -
+```
+
+CVE matching uses an offline curated database (`data/cve_db.yaml`) via a
+pluggable source — a live NVD/CPE source can be dropped in later. A worked
+sample report (from synthetic data) lives in
+[`reports/samples/`](reports/samples/metasploitable2-sample.md).
 
 ### Tests
 

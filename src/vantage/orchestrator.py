@@ -13,6 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .agents.recon import ReconAgent
+from .agents.reporting import ReportingAgent
+from .agents.vuln import VulnAnalysisAgent
 from .scope import Scope
 
 
@@ -23,9 +25,22 @@ class Orchestrator:
     def recon(self, target: str, **kwargs) -> dict:
         return ReconAgent(scope=self.scope).scan(target, **kwargs)
 
-    # Later phases:
-    # def analyze(self, recon_result: dict) -> dict: ...   # vuln analysis
-    # def report(self, findings: dict) -> str: ...         # reporting
+    def analyze(self, recon_result: dict) -> dict:
+        return VulnAnalysisAgent.with_static_db().analyze(recon_result)
+
+    def report(self, recon_result: dict, analysis: dict) -> str:
+        return ReportingAgent().render_markdown(recon_result, analysis)
+
+    def run(self, target: str, **recon_kwargs) -> dict:
+        """recon -> analyze -> report. (Runs recon live, so needs nmap + scope.)"""
+        recon_result = self.recon(target, **recon_kwargs)
+        analysis = self.analyze(recon_result)
+        return {
+            "recon": recon_result,
+            "analysis": analysis,
+            "report_markdown": self.report(recon_result, analysis),
+        }
+
     # exploit stage: not implemented — requires per-action human confirmation.
 
     @classmethod

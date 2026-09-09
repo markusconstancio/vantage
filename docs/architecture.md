@@ -18,7 +18,7 @@ vantage is two modules sharing one pattern: **orchestrator → specialist agents
    ┌────┼─────────────┬───────────────┬──────────────┐
    │    │             │               │              │
  recon  →  vuln analysis  →  reporting        exploit (deferred,
- (now)     (next)            (next)            human-gated, later)
+ (done)    (done)            (done)            human-gated, later)
 ```
 
 ## Module 1 — Red Team
@@ -31,10 +31,18 @@ vantage is two modules sharing one pattern: **orchestrator → specialist agents
 - **`vantage.agents.recon`** — `nmap` wrapper. `scan()` gates on scope first,
   runs `-sV -sC` enumeration against a single target, and parses the XML into a
   structured dict. Enumeration only; no exploitation, no discovery sweeps.
-- **`vantage.orchestrator`** — coordinates the pipeline. Currently only wires up
-  recon; vuln-analysis and reporting stages are stubs. The exploit stage is
-  intentionally not implemented (safety-framework.md rule 2).
-- **`vantage.cli`** — `python -m vantage recon <target>`.
+- **`vantage.agents.vuln`** — maps each open service's product/version to known
+  CVEs via a pluggable `CveSource` and ranks findings by exploitability
+  (public exploit first, then CVSS). The default `StaticCveSource` reads a
+  curated offline database (`data/cve_db.yaml`) using product-substring +
+  version-prefix matching; a future NVD/CPE source implementing the same
+  `lookup(product, version)` interface drops in without touching the agent.
+- **`vantage.agents.reporting`** — consolidates recon + findings into a
+  structured Markdown report (summary, open-services table, ranked findings).
+- **`vantage.orchestrator`** — wires recon → analyze → report. The exploit
+  stage is intentionally not implemented (safety-framework.md rule 2).
+- **`vantage.cli`** — `recon <target>`, `analyze <recon.json|->`,
+  `report <recon.json|-> [-o out.md]`.
 
 ### Recon output shape
 
@@ -57,8 +65,10 @@ vantage is two modules sharing one pattern: **orchestrator → specialist agents
 }
 ```
 
-The vuln-analysis agent (next phase) consumes this and maps
-`product`/`version` pairs to known CVEs.
+The vuln-analysis agent consumes this and maps `product`/`version` pairs to
+known CVEs, emitting ranked findings that the reporting agent renders. See
+[`reports/samples/`](../reports/samples/metasploitable2-sample.md) for a worked
+example generated from synthetic data.
 
 ## Module 2 — OSINT (later phase)
 
