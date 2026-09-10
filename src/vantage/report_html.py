@@ -172,6 +172,16 @@ ol.rem li::before{content:counter(r);position:absolute;left:12px;top:50%;
   font-size:12px;font-weight:800;display:grid;place-items:center;}
 .note{background:var(--panel);border:1px dashed var(--border);border-radius:12px;
   padding:12px 15px;font-size:13px;color:var(--ink-2);}
+[data-tip]{cursor:help;}
+.bar-track[data-tip],.gauge[data-tip]{cursor:default;}
+tbody tr[data-tip]{cursor:default;}
+.vtip{position:fixed;z-index:60;pointer-events:none;max-width:290px;opacity:0;
+  transform:translateY(3px);transition:opacity .12s,transform .12s;
+  background:var(--hero-1);color:#eef3fb;font-size:12px;line-height:1.45;
+  padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 8px 26px rgba(0,0,0,.35);}
+.vtip.on{opacity:1;transform:translateY(0);}
+.vtip b{color:#7dd3fc;font-weight:600;}
 footer.rpt{margin-top:34px;padding:16px 40px;border-top:1px solid var(--grid);
   color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;
   background:var(--panel);}
@@ -188,6 +198,40 @@ _SHIELD = (
     '<path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/>'
     '<path d="M9 12l2 2 4-4"/></svg>'
 )
+
+# Brand favicon — a shield on a dark rounded tile, accent stroke.
+_FAVICON = (
+    '<link rel="icon" href="data:image/svg+xml,'
+    "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E"
+    "%3Crect width='32' height='32' rx='8' fill='%230b1120'/%3E"
+    "%3Cpath d='M16 6l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V9z' fill='none' "
+    "stroke='%2338bdf8' stroke-width='2' stroke-linejoin='round'/%3E"
+    "%3Cpath d='M12.5 15.5l2.3 2.3 4.7-4.7' fill='none' stroke='%2338bdf8' "
+    "stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E"
+    "%3C/svg%3E\">"
+)
+
+_TOOLTIP_JS = """<script>
+(function(){
+  var tip=document.createElement('div');tip.className='vtip';document.body.appendChild(tip);
+  function html(el){return el.getAttribute('data-tip')||'';}
+  function at(x,y){var w=tip.offsetWidth,h=tip.offsetHeight,pad=12;
+    var L=x+14,T=y+16;if(L+w>innerWidth-pad)L=x-w-14;if(T+h>innerHeight-pad)T=y-h-16;
+    tip.style.left=Math.max(pad,L)+'px';tip.style.top=Math.max(pad,T)+'px';}
+  function show(e){var t=html(e.currentTarget);if(!t)return;tip.innerHTML=t;
+    tip.classList.add('on');at(e.clientX,e.clientY);}
+  function move(e){if(tip.classList.contains('on'))at(e.clientX,e.clientY);}
+  function hide(){tip.classList.remove('on');}
+  document.querySelectorAll('[data-tip]').forEach(function(el){
+    el.addEventListener('mouseenter',show);el.addEventListener('mousemove',move);
+    el.addEventListener('mouseleave',hide);
+    el.setAttribute('tabindex','0');
+    el.addEventListener('focus',function(){var t=html(el);if(!t)return;tip.innerHTML=t;
+      tip.classList.add('on');var b=el.getBoundingClientRect();at(b.left,b.bottom);});
+    el.addEventListener('blur',hide);
+  });
+})();
+</script>"""
 
 _SEV_COLOR = {  # vuln severity — Low is still a weakness → neutral, not green
     "Critical": "var(--critical)", "High": "var(--serious)",
@@ -209,8 +253,9 @@ def _page(title: str, body: str) -> str:
     return (
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
         "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-        f"<title>{_e(title)}</title><style>{_CSS}</style></head>"
-        f"<body><div class=\"wrap\"><div class=\"card\">{body}</div></div></body></html>"
+        f"{_FAVICON}<title>{_e(title)}</title><style>{_CSS}</style></head>"
+        f"<body><div class=\"wrap\"><div class=\"card\">{body}</div></div>"
+        f"{_TOOLTIP_JS}</body></html>"
     )
 
 
@@ -306,8 +351,12 @@ def render_findings_html(recon_result: dict, analysis: dict) -> str:
         for p in host.get("ports", []):
             if p.get("state") != "open":
                 continue
+            prod = " ".join(x for x in (p.get("product"), p.get("version")) if x)
+            tip = (f'<b>{_e(p.get("service") or "service")}</b> on port '
+                   f'{_e(p.get("port"))}/{_e(p.get("protocol"))} — '
+                   f'{_e(prod or "unidentified")}')
             b.append(
-                f'<tr><td class="mono">{_e(host.get("address"))}</td>'
+                f'<tr data-tip="{tip}"><td class="mono">{_e(host.get("address"))}</td>'
                 f'<td class="mono">{_e(p.get("port"))}/{_e(p.get("protocol"))}</td>'
                 f'<td>{_e(p.get("service"))}</td><td>{_e(p.get("product"))}</td>'
                 f'<td class="mono">{_e(p.get("version"))}</td></tr>')
@@ -386,9 +435,12 @@ def render_osint_html(assessment: dict) -> str:
             f'<div class="r{on}" style="--c:{_BAND_COLOR[name]}">'
             f'<span class="sw"></span><span>{name}</span>'
             f'<span style="color:var(--muted);margin-left:auto" class="mono">{rng}</span></div>')
+    gtip = (f'<b>{score}/100 — {_e(band)} risk</b><br>weighted sum '
+            f'{assessment.get("raw", 0)} of {assessment.get("max_raw", 60)} '
+            'possible exposure points')
     b.append(
         f'<div class="risk" style="--c:{color}">'
-        f'<div class="gauge">{_gauge_svg(score, color)}'
+        f'<div class="gauge" data-tip="{gtip}">{_gauge_svg(score, color)}'
         f'<div class="center"><div class="num">{score}</div>'
         f'<div class="den">/ 100</div></div></div>'
         f'<div class="side"><div class="band">{_badge(band + " risk", color)}</div>'
@@ -400,9 +452,12 @@ def render_osint_html(assessment: dict) -> str:
     for f in assessment["factors"]:
         pts = f["weighted"]
         w = max(4, round(pts / max_pts * 100))
+        tip = (f'<b>{_e(f["factor"].replace("_"," "))}</b> · rating '
+               f'{f["rating"]}/3 × weight {f["weight"]} = {pts} pts<br>'
+               f'{_e(f["rationale"])}')
         b.append(
             f'<div class="bar-row"><div class="name">{_e(f["factor"].replace("_"," "))}</div>'
-            f'<div class="bar-track" title="{_e(f["rationale"])}">'
+            f'<div class="bar-track" data-tip="{tip}">'
             f'<div class="bar-fill" style="width:{w}%"></div>'
             f'<div class="bar-val">{pts} pts · rating {f["rating"]}/3</div></div></div>')
     b.append('</div>')

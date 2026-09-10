@@ -27,6 +27,11 @@ class FindingsHtmlTests(unittest.TestCase):
     def test_theme_aware(self):
         self.assertIn("prefers-color-scheme:dark", self.html)
 
+    def test_interactive_and_favicon(self):
+        self.assertIn('rel="icon"', self.html)          # favicon
+        self.assertIn("data-tip", self.html)             # tooltip anchors
+        self.assertIn("className='vtip'", self.html)     # tooltip layer script
+
     def test_content(self):
         self.assertIn("CVE-2011-2523", self.html)
         self.assertIn("Critical", self.html)
