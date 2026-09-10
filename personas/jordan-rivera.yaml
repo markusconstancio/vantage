@@ -1,0 +1,42 @@
+# SYNTHETIC persona — fabricated, not a real person. See
+# personas/synthetic-persona.md for the narrative. Structured input for the
+# automated OSINT scorer (vantage.osint).
+
+name: Jordan Rivera
+kind: synthetic
+reused_handle: "@jrivera_codes"
+emails:
+  - jordan.rivera@example.com
+  - jrivera.dev@example.net
+phone: "+1-555-0142"
+employer: Northwind Trading Co.
+role: Junior Backend Engineer
+location: "Austin, TX"
+personal_domain: jordanrivera.example
+photos_public: true
+dob_hints: false
+interests:
+  - rock climbing
+  - dog "Biscuit"
+  - photography
+linked_accounts:
+  - code-host
+  - microblog
+  - forum
+breaches:
+  - name: DemoForum 2019
+    data_classes: [emails, usernames, passwords]
+    passwords_exposed: true
+  - name: ShopDemo 2021
+    data_classes: [emails, names, phone numbers]
+    passwords_exposed: false
+  - name: NewsletterCo 2022
+    data_classes: [emails]
+    passwords_exposed: false
+
+# Current security posture (what remediation would change).
+posture:
+  mfa_enabled: false
+  passwords_unique: false
+  phone_public: true
+  address_public: false

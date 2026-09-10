@@ -1,0 +1,196 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1120'/%3E%3Cpath d='M16 6l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V9z' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M12.5 15.5l2.3 2.3 4.7-4.7' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"><title>Red Team Findings — 192.0.2.10</title><style>
+:root{
+  color-scheme:light;
+  --page:#eaeef4; --surface:#ffffff; --panel:#f5f7fb;
+  --ink:#0b1220; --ink-2:#475569; --muted:#8b97a8;
+  --grid:#e7ebf2; --border:rgba(15,23,42,.09); --track:#e9edf4;
+  --hero-1:#0b1120; --hero-2:#16233d; --hero-ink:#eef3fb; --hero-ink-2:#9db2d0;
+  --accent:#38bdf8; --accent-2:#6366f1; --series-1:#2a78d6;
+  --good:#0ca30c; --warning:#f59e0b; --serious:#ec835a; --critical:#d03b3b;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 12px 32px rgba(15,23,42,.10);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#080b12; --surface:#0f1522; --panel:#151c2b;
+    --ink:#f2f6fc; --ink-2:#aab7ca; --muted:#6b7889;
+    --grid:#1e2636; --border:rgba(255,255,255,.08); --track:#1c2433;
+    --hero-1:#0a0f1c; --hero-2:#141f36; --hero-ink:#eef3fb; --hero-ink-2:#9db2d0;
+    --accent:#38bdf8; --accent-2:#818cf8; --series-1:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+.wrap{max-width:900px;margin:0 auto;padding:36px 20px 80px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  box-shadow:var(--shadow);overflow:hidden;}
+.body{padding:34px 40px 40px;}
+/* hero */
+.hero{position:relative;padding:30px 40px 34px;
+  background:linear-gradient(135deg,var(--hero-1),var(--hero-2));color:var(--hero-ink);
+  overflow:hidden;}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:22px 22px;mask-image:linear-gradient(120deg,#000,transparent 70%);
+  -webkit-mask-image:linear-gradient(120deg,#000,transparent 70%);}
+.hero>*{position:relative;z-index:1;}
+.brandrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.wordmark{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.32em;
+  font-size:13px;text-transform:uppercase;}
+.wordmark .mk{width:28px;height:28px;flex:none;
+  color:var(--accent);filter:drop-shadow(0 0 10px rgba(56,189,248,.45));}
+.kind{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  padding:5px 12px;border-radius:999px;color:var(--hero-ink);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(4px);}
+.hero h1{margin:0;font-size:30px;line-height:1.12;letter-spacing:-.02em;font-weight:750;}
+.hero .sub{margin:6px 0 0;color:var(--hero-ink-2);font-size:14.5px;}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;
+  color:var(--hero-ink);background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:5px 11px;}
+.pill b{color:var(--hero-ink-2);font-weight:600;}
+.pill .mono,.pill code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;letter-spacing:.01em;}
+/* sections */
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+  margin:34px 0 15px;font-weight:700;display:flex;align-items:center;gap:10px;}
+h2::after{content:"";flex:1;height:1px;background:var(--grid);}
+h2:first-child{margin-top:4px;}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.tile{position:relative;background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:16px 18px;overflow:hidden;}
+.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--c,var(--accent));opacity:.9;}
+.tile .n{font-size:28px;font-weight:720;letter-spacing:-.02em;line-height:1;}
+.tile .l{font-size:12px;color:var(--muted);margin-top:6px;}
+/* severity distribution bar */
+.sevbar{display:flex;height:12px;border-radius:999px;overflow:hidden;gap:2px;
+  background:var(--track);margin:2px 0 12px;}
+.sevbar span{display:block;}
+.sevlegend{display:flex;flex-wrap:wrap;gap:8px 16px;}
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+  padding:4px 11px 4px 9px;border-radius:999px;border:1px solid var(--border);
+  white-space:nowrap;background:var(--panel);}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--c);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent);}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:7px;
+  color:#fff;background:var(--c);}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:700;padding:0 14px 9px;border-bottom:1px solid var(--grid);}
+td{padding:11px 14px;border-bottom:1px solid var(--grid);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--panel);}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  font-variant-numeric:tabular-nums;}
+/* findings */
+.finding{position:relative;border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px 16px 20px;margin-bottom:12px;background:var(--panel);overflow:hidden;}
+.finding::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c);}
+.finding .top{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:9px;}
+.finding .rank{flex:none;width:24px;height:24px;border-radius:8px;background:var(--surface);
+  border:1px solid var(--border);color:var(--ink-2);font-size:12px;font-weight:800;
+  display:grid;place-items:center;}
+.finding .cve{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:6px;}
+.finding .title{font-size:15px;font-weight:650;flex:1;min-width:200px;}
+.finding .meta2{font-size:12.5px;color:var(--muted);margin-left:35px;}
+.finding .aff{font-size:13px;color:var(--ink-2);margin:6px 0 0 35px;}
+.finding .aff b{color:var(--ink);font-weight:600;}
+.finding .ref{font-size:12.5px;margin:6px 0 0 35px;}
+.finding a{color:var(--series-1);text-decoration:none;}
+.finding a:hover{text-decoration:underline;}
+/* OSINT gauge */
+.risk{display:flex;align-items:center;gap:30px;flex-wrap:wrap;padding:26px 28px;
+  border:1px solid var(--border);border-radius:16px;background:var(--panel);}
+.gauge{flex:none;width:180px;height:180px;position:relative;}
+.gauge svg{transform:rotate(0deg);display:block;}
+.gauge .center{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;}
+.gauge .num{font-size:46px;font-weight:760;letter-spacing:-.03em;line-height:1;color:var(--c);}
+.gauge .den{font-size:13px;color:var(--muted);margin-top:2px;}
+.risk .side{flex:1;min-width:220px;}
+.risk .side .band{margin-bottom:12px;}
+.risk .scale{display:flex;flex-direction:column;gap:7px;margin-top:4px;}
+.risk .scale .r{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2);}
+.risk .scale .sw{width:26px;height:8px;border-radius:999px;flex:none;background:var(--c);}
+.risk .scale .r.on{font-weight:700;color:var(--ink);}
+.risk .scale .r.on .sw{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent);}
+/* factor bars */
+.bars{display:flex;flex-direction:column;gap:10px;}
+.bar-row{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;}
+.bar-row .name{font-size:13px;color:var(--ink-2);text-transform:capitalize;}
+.bar-track{position:relative;height:24px;background:var(--track);border-radius:7px;overflow:hidden;}
+.bar-fill{position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(90deg,var(--series-1),color-mix(in srgb,var(--series-1) 78%,var(--accent)));
+  border-radius:7px 5px 5px 7px;min-width:4px;}
+.bar-val{position:absolute;inset:0;display:flex;align-items:center;padding-left:11px;
+  font-size:12px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 1px rgba(0,0,0,.25);}
+/* scenarios + remediation */
+.scen{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+.scen li{position:relative;border:1px solid var(--border);border-radius:12px;
+  padding:13px 15px 13px 16px;background:var(--panel);font-size:13.5px;}
+.scen li::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;
+  border-radius:3px;background:var(--accent-2);}
+.scen .nm{font-weight:650;}
+.scen .plaus{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--muted);margin-left:8px;}
+.scen .en{color:var(--muted);font-size:12.5px;margin-top:3px;}
+ol.rem{margin:0;padding:0;list-style:none;counter-reset:r;
+  display:flex;flex-direction:column;gap:9px;}
+ol.rem li{counter-increment:r;position:relative;padding:11px 15px 11px 46px;font-size:13.5px;
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--ink-2);}
+ol.rem li::before{content:counter(r);position:absolute;left:12px;top:50%;
+  transform:translateY(-50%);width:24px;height:24px;border-radius:7px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  font-size:12px;font-weight:800;display:grid;place-items:center;}
+.note{background:var(--panel);border:1px dashed var(--border);border-radius:12px;
+  padding:12px 15px;font-size:13px;color:var(--ink-2);}
+[data-tip]{cursor:help;}
+.bar-track[data-tip],.gauge[data-tip]{cursor:default;}
+tbody tr[data-tip]{cursor:default;}
+.vtip{position:fixed;z-index:60;pointer-events:none;max-width:290px;opacity:0;
+  transform:translateY(3px);transition:opacity .12s,transform .12s;
+  background:var(--hero-1);color:#eef3fb;font-size:12px;line-height:1.45;
+  padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 8px 26px rgba(0,0,0,.35);}
+.vtip.on{opacity:1;transform:translateY(0);}
+.vtip b{color:#7dd3fc;font-weight:600;}
+footer.rpt{margin-top:34px;padding:16px 40px;border-top:1px solid var(--grid);
+  color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;
+  background:var(--panel);}
+footer.rpt .mk{width:15px;height:15px;color:var(--muted);flex:none;}
+@media (max-width:560px){
+  .hero,.body{padding-left:22px;padding-right:22px;}
+  .finding .meta2,.finding .aff,.finding .ref{margin-left:0;}
+}
+</style></head><body><div class="wrap"><div class="card"><div class="hero"><div class="brandrow"><span class="wordmark"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>vantage</span><span class="kind">Red Team</span></div><h1>Red Team Findings</h1><p class="sub">Service enumeration and CVE analysis — enumeration only.</p><div class="pills"><span class="pill"><b>target</b> <span class="mono">192.0.2.10</span></span><span class="pill"><b>scope</b> metasploitable2 (synthetic sample)</span><span class="pill"><b>scanned</b> <span class="mono">SAMPLE — synthetic data, not a real scan</span></span></div></div><div class="body"><h2>Summary</h2><div class="tiles"><div class="tile" style="--c:var(--accent)"><div class="n">6</div><div class="l">Open services</div></div><div class="tile" style="--c:var(--accent-2)"><div class="n">4</div><div class="l">Findings</div></div><div class="tile" style="--c:var(--critical)"><div class="n">4</div><div class="l">Public exploit</div></div><div class="tile" style="--c:var(--critical)"><div class="n" style="font-size:19px;padding-top:5px"><span class="badge" style="--c:var(--critical)">Critical</span></div><div class="l">Top severity · CVSS 10.0</div></div></div><h2>Severity distribution</h2><div class="sevbar"><span style="flex:1;background:var(--critical)"></span><span style="flex:1;background:var(--serious)"></span><span style="flex:2;background:var(--warning)"></span></div><div class="sevlegend"><span class="chip" style="--c:var(--critical)"><span class="dot"></span>Critical · 1</span><span class="chip" style="--c:var(--serious)"><span class="dot"></span>High · 1</span><span class="chip" style="--c:var(--warning)"><span class="dot"></span>Medium · 2</span></div><h2>Open services</h2><table><thead><tr><th>Host</th><th>Port</th><th>Service</th><th>Product</th><th>Version</th></tr></thead><tbody><tr data-tip="<b>ftp</b> on port 21/tcp — vsftpd 2.3.4"><td class="mono">192.0.2.10</td><td class="mono">21/tcp</td><td>ftp</td><td>vsftpd</td><td class="mono">2.3.4</td></tr><tr data-tip="<b>ssh</b> on port 22/tcp — OpenSSH 4.7p1 Debian 8ubuntu1"><td class="mono">192.0.2.10</td><td class="mono">22/tcp</td><td>ssh</td><td>OpenSSH</td><td class="mono">4.7p1 Debian 8ubuntu1</td></tr><tr data-tip="<b>telnet</b> on port 23/tcp — Linux telnetd"><td class="mono">192.0.2.10</td><td class="mono">23/tcp</td><td>telnet</td><td>Linux telnetd</td><td class="mono"></td></tr><tr data-tip="<b>http</b> on port 80/tcp — Apache httpd 2.2.8"><td class="mono">192.0.2.10</td><td class="mono">80/tcp</td><td>http</td><td>Apache httpd</td><td class="mono">2.2.8</td></tr><tr data-tip="<b>mysql</b> on port 3306/tcp — MySQL 5.0.51a-3ubuntu5"><td class="mono">192.0.2.10</td><td class="mono">3306/tcp</td><td>mysql</td><td>MySQL</td><td class="mono">5.0.51a-3ubuntu5</td></tr><tr data-tip="<b>netbios-ssn</b> on port 445/tcp — Samba smbd 3.0.20-Debian"><td class="mono">192.0.2.10</td><td class="mono">445/tcp</td><td>netbios-ssn</td><td>Samba smbd</td><td class="mono">3.0.20-Debian</td></tr></tbody></table><h2>Findings — ranked by exploitability</h2><div class="finding" style="--c:var(--critical)"><div class="top"><span class="rank">1</span><span class="badge" style="--c:var(--critical)">Critical</span><span class="cve">CVE-2011-2523</span><span class="title">vsftpd 2.3.4 backdoor command execution</span></div><div class="meta2">CVSS 10.0 · public exploit available</div><div class="aff"><b>Affected:</b> vsftpd 2.3.4 on 192.0.2.10:21/tcp (ftp)</div><div class="ref">↗ <a href="https://nvd.nist.gov/vuln/detail/CVE-2011-2523">https://nvd.nist.gov/vuln/detail/CVE-2011-2523</a></div></div><div class="finding" style="--c:var(--serious)"><div class="top"><span class="rank">2</span><span class="badge" style="--c:var(--serious)">High</span><span class="cve">CVE-2011-3192</span><span class="title">Apache HTTPD Range header denial of service (Apache Killer)</span></div><div class="meta2">CVSS 7.8 · public exploit available</div><div class="aff"><b>Affected:</b> Apache httpd 2.2.8 on 192.0.2.10:80/tcp (http)</div><div class="ref">↗ <a href="https://nvd.nist.gov/vuln/detail/CVE-2011-3192">https://nvd.nist.gov/vuln/detail/CVE-2011-3192</a></div></div><div class="finding" style="--c:var(--warning)"><div class="top"><span class="rank">3</span><span class="badge" style="--c:var(--warning)">Medium</span><span class="cve">CVE-2007-2447</span><span class="title">Samba &quot;username map script&quot; remote command execution</span></div><div class="meta2">CVSS 6.0 · public exploit available</div><div class="aff"><b>Affected:</b> Samba smbd 3.0.20-Debian on 192.0.2.10:445/tcp (netbios-ssn)</div><div class="ref">↗ <a href="https://nvd.nist.gov/vuln/detail/CVE-2007-2447">https://nvd.nist.gov/vuln/detail/CVE-2007-2447</a></div></div><div class="finding" style="--c:var(--warning)"><div class="top"><span class="rank">4</span><span class="badge" style="--c:var(--warning)">Medium</span><span class="cve">CVE-2018-15473</span><span class="title">OpenSSH username enumeration</span></div><div class="meta2">CVSS 5.3 · public exploit available</div><div class="aff"><b>Affected:</b> OpenSSH 4.7p1 Debian 8ubuntu1 on 192.0.2.10:22/tcp (ssh)</div><div class="ref">↗ <a href="https://nvd.nist.gov/vuln/detail/CVE-2018-15473">https://nvd.nist.gov/vuln/detail/CVE-2018-15473</a></div></div></div><footer class="rpt"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>Generated by vantage · enumeration and analysis only — no exploitation was performed.</footer></div></div><script>
+(function(){
+  var tip=document.createElement('div');tip.className='vtip';document.body.appendChild(tip);
+  function html(el){return el.getAttribute('data-tip')||'';}
+  function at(x,y){var w=tip.offsetWidth,h=tip.offsetHeight,pad=12;
+    var L=x+14,T=y+16;if(L+w>innerWidth-pad)L=x-w-14;if(T+h>innerHeight-pad)T=y-h-16;
+    tip.style.left=Math.max(pad,L)+'px';tip.style.top=Math.max(pad,T)+'px';}
+  function show(e){var t=html(e.currentTarget);if(!t)return;tip.innerHTML=t;
+    tip.classList.add('on');at(e.clientX,e.clientY);}
+  function move(e){if(tip.classList.contains('on'))at(e.clientX,e.clientY);}
+  function hide(){tip.classList.remove('on');}
+  document.querySelectorAll('[data-tip]').forEach(function(el){
+    el.addEventListener('mouseenter',show);el.addEventListener('mousemove',move);
+    el.addEventListener('mouseleave',hide);
+    el.setAttribute('tabindex','0');
+    el.addEventListener('focus',function(){var t=html(el);if(!t)return;tip.innerHTML=t;
+      tip.classList.add('on');var b=el.getBoundingClientRect();at(b.left,b.bottom);});
+    el.addEventListener('blur',hide);
+  });
+})();
+</script></body></html>

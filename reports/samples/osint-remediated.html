@@ -1,0 +1,196 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1120'/%3E%3Cpath d='M16 6l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V9z' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M12.5 15.5l2.3 2.3 4.7-4.7' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"><title>OSINT Risk Assessment — Jordan Rivera</title><style>
+:root{
+  color-scheme:light;
+  --page:#eaeef4; --surface:#ffffff; --panel:#f5f7fb;
+  --ink:#0b1220; --ink-2:#475569; --muted:#8b97a8;
+  --grid:#e7ebf2; --border:rgba(15,23,42,.09); --track:#e9edf4;
+  --hero-1:#0b1120; --hero-2:#16233d; --hero-ink:#eef3fb; --hero-ink-2:#9db2d0;
+  --accent:#38bdf8; --accent-2:#6366f1; --series-1:#2a78d6;
+  --good:#0ca30c; --warning:#f59e0b; --serious:#ec835a; --critical:#d03b3b;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 12px 32px rgba(15,23,42,.10);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#080b12; --surface:#0f1522; --panel:#151c2b;
+    --ink:#f2f6fc; --ink-2:#aab7ca; --muted:#6b7889;
+    --grid:#1e2636; --border:rgba(255,255,255,.08); --track:#1c2433;
+    --hero-1:#0a0f1c; --hero-2:#141f36; --hero-ink:#eef3fb; --hero-ink-2:#9db2d0;
+    --accent:#38bdf8; --accent-2:#818cf8; --series-1:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+.wrap{max-width:900px;margin:0 auto;padding:36px 20px 80px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  box-shadow:var(--shadow);overflow:hidden;}
+.body{padding:34px 40px 40px;}
+/* hero */
+.hero{position:relative;padding:30px 40px 34px;
+  background:linear-gradient(135deg,var(--hero-1),var(--hero-2));color:var(--hero-ink);
+  overflow:hidden;}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:22px 22px;mask-image:linear-gradient(120deg,#000,transparent 70%);
+  -webkit-mask-image:linear-gradient(120deg,#000,transparent 70%);}
+.hero>*{position:relative;z-index:1;}
+.brandrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.wordmark{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.32em;
+  font-size:13px;text-transform:uppercase;}
+.wordmark .mk{width:28px;height:28px;flex:none;
+  color:var(--accent);filter:drop-shadow(0 0 10px rgba(56,189,248,.45));}
+.kind{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  padding:5px 12px;border-radius:999px;color:var(--hero-ink);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(4px);}
+.hero h1{margin:0;font-size:30px;line-height:1.12;letter-spacing:-.02em;font-weight:750;}
+.hero .sub{margin:6px 0 0;color:var(--hero-ink-2);font-size:14.5px;}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;
+  color:var(--hero-ink);background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:5px 11px;}
+.pill b{color:var(--hero-ink-2);font-weight:600;}
+.pill .mono,.pill code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;letter-spacing:.01em;}
+/* sections */
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+  margin:34px 0 15px;font-weight:700;display:flex;align-items:center;gap:10px;}
+h2::after{content:"";flex:1;height:1px;background:var(--grid);}
+h2:first-child{margin-top:4px;}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.tile{position:relative;background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:16px 18px;overflow:hidden;}
+.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--c,var(--accent));opacity:.9;}
+.tile .n{font-size:28px;font-weight:720;letter-spacing:-.02em;line-height:1;}
+.tile .l{font-size:12px;color:var(--muted);margin-top:6px;}
+/* severity distribution bar */
+.sevbar{display:flex;height:12px;border-radius:999px;overflow:hidden;gap:2px;
+  background:var(--track);margin:2px 0 12px;}
+.sevbar span{display:block;}
+.sevlegend{display:flex;flex-wrap:wrap;gap:8px 16px;}
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+  padding:4px 11px 4px 9px;border-radius:999px;border:1px solid var(--border);
+  white-space:nowrap;background:var(--panel);}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--c);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent);}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:7px;
+  color:#fff;background:var(--c);}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:700;padding:0 14px 9px;border-bottom:1px solid var(--grid);}
+td{padding:11px 14px;border-bottom:1px solid var(--grid);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--panel);}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  font-variant-numeric:tabular-nums;}
+/* findings */
+.finding{position:relative;border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px 16px 20px;margin-bottom:12px;background:var(--panel);overflow:hidden;}
+.finding::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c);}
+.finding .top{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:9px;}
+.finding .rank{flex:none;width:24px;height:24px;border-radius:8px;background:var(--surface);
+  border:1px solid var(--border);color:var(--ink-2);font-size:12px;font-weight:800;
+  display:grid;place-items:center;}
+.finding .cve{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:6px;}
+.finding .title{font-size:15px;font-weight:650;flex:1;min-width:200px;}
+.finding .meta2{font-size:12.5px;color:var(--muted);margin-left:35px;}
+.finding .aff{font-size:13px;color:var(--ink-2);margin:6px 0 0 35px;}
+.finding .aff b{color:var(--ink);font-weight:600;}
+.finding .ref{font-size:12.5px;margin:6px 0 0 35px;}
+.finding a{color:var(--series-1);text-decoration:none;}
+.finding a:hover{text-decoration:underline;}
+/* OSINT gauge */
+.risk{display:flex;align-items:center;gap:30px;flex-wrap:wrap;padding:26px 28px;
+  border:1px solid var(--border);border-radius:16px;background:var(--panel);}
+.gauge{flex:none;width:180px;height:180px;position:relative;}
+.gauge svg{transform:rotate(0deg);display:block;}
+.gauge .center{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;}
+.gauge .num{font-size:46px;font-weight:760;letter-spacing:-.03em;line-height:1;color:var(--c);}
+.gauge .den{font-size:13px;color:var(--muted);margin-top:2px;}
+.risk .side{flex:1;min-width:220px;}
+.risk .side .band{margin-bottom:12px;}
+.risk .scale{display:flex;flex-direction:column;gap:7px;margin-top:4px;}
+.risk .scale .r{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2);}
+.risk .scale .sw{width:26px;height:8px;border-radius:999px;flex:none;background:var(--c);}
+.risk .scale .r.on{font-weight:700;color:var(--ink);}
+.risk .scale .r.on .sw{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent);}
+/* factor bars */
+.bars{display:flex;flex-direction:column;gap:10px;}
+.bar-row{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;}
+.bar-row .name{font-size:13px;color:var(--ink-2);text-transform:capitalize;}
+.bar-track{position:relative;height:24px;background:var(--track);border-radius:7px;overflow:hidden;}
+.bar-fill{position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(90deg,var(--series-1),color-mix(in srgb,var(--series-1) 78%,var(--accent)));
+  border-radius:7px 5px 5px 7px;min-width:4px;}
+.bar-val{position:absolute;inset:0;display:flex;align-items:center;padding-left:11px;
+  font-size:12px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 1px rgba(0,0,0,.25);}
+/* scenarios + remediation */
+.scen{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+.scen li{position:relative;border:1px solid var(--border);border-radius:12px;
+  padding:13px 15px 13px 16px;background:var(--panel);font-size:13.5px;}
+.scen li::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;
+  border-radius:3px;background:var(--accent-2);}
+.scen .nm{font-weight:650;}
+.scen .plaus{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--muted);margin-left:8px;}
+.scen .en{color:var(--muted);font-size:12.5px;margin-top:3px;}
+ol.rem{margin:0;padding:0;list-style:none;counter-reset:r;
+  display:flex;flex-direction:column;gap:9px;}
+ol.rem li{counter-increment:r;position:relative;padding:11px 15px 11px 46px;font-size:13.5px;
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--ink-2);}
+ol.rem li::before{content:counter(r);position:absolute;left:12px;top:50%;
+  transform:translateY(-50%);width:24px;height:24px;border-radius:7px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  font-size:12px;font-weight:800;display:grid;place-items:center;}
+.note{background:var(--panel);border:1px dashed var(--border);border-radius:12px;
+  padding:12px 15px;font-size:13px;color:var(--ink-2);}
+[data-tip]{cursor:help;}
+.bar-track[data-tip],.gauge[data-tip]{cursor:default;}
+tbody tr[data-tip]{cursor:default;}
+.vtip{position:fixed;z-index:60;pointer-events:none;max-width:290px;opacity:0;
+  transform:translateY(3px);transition:opacity .12s,transform .12s;
+  background:var(--hero-1);color:#eef3fb;font-size:12px;line-height:1.45;
+  padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 8px 26px rgba(0,0,0,.35);}
+.vtip.on{opacity:1;transform:translateY(0);}
+.vtip b{color:#7dd3fc;font-weight:600;}
+footer.rpt{margin-top:34px;padding:16px 40px;border-top:1px solid var(--grid);
+  color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;
+  background:var(--panel);}
+footer.rpt .mk{width:15px;height:15px;color:var(--muted);flex:none;}
+@media (max-width:560px){
+  .hero,.body{padding-left:22px;padding-right:22px;}
+  .finding .meta2,.finding .aff,.finding .ref{margin-left:0;}
+}
+</style></head><body><div class="wrap"><div class="card"><div class="hero"><div class="brandrow"><span class="wordmark"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>vantage</span><span class="kind">OSINT</span></div><h1>Risk Assessment</h1><p class="sub">Social-engineering exposure from a public footprint.</p><div class="pills"><span class="pill"><b>subject</b> Jordan Rivera</span><span class="pill"><b>consent</b> synthetic</span><span class="pill"><b>factors</b> <span class="mono">6</span></span></div></div><div class="body"><div class="risk" style="--c:var(--warning)"><div class="gauge" data-tip="<b>47/100 — Moderate risk</b><br>weighted sum 28 of 60 possible exposure points"><svg width="180" height="180" viewBox="0 0 180 180" aria-hidden="true"><circle cx="90" cy="90" r="74" fill="none" stroke="var(--track)" stroke-width="14" stroke-linecap="round" transform="rotate(135 90 90)" stroke-dasharray="348.72 464.96"/><circle cx="90" cy="90" r="74" fill="none" stroke="var(--warning)" stroke-width="14" stroke-linecap="round" transform="rotate(135 90 90)" stroke-dasharray="163.90 464.96"/></svg><div class="center"><div class="num">47</div><div class="den">/ 100</div></div></div><div class="side"><div class="band"><span class="badge" style="--c:var(--warning)">Moderate risk</span></div><div class="scale"><div class="r" style="--c:var(--good)"><span class="sw"></span><span>Low</span><span style="color:var(--muted);margin-left:auto" class="mono">0–24</span></div><div class="r on" style="--c:var(--warning)"><span class="sw"></span><span>Moderate</span><span style="color:var(--muted);margin-left:auto" class="mono">25–49</span></div><div class="r" style="--c:var(--serious)"><span class="sw"></span><span>High</span><span style="color:var(--muted);margin-left:auto" class="mono">50–74</span></div><div class="r" style="--c:var(--critical)"><span class="sw"></span><span>Critical</span><span style="color:var(--muted);margin-left:auto" class="mono">75–100</span></div></div></div></div><h2>Factor breakdown</h2><div class="bars"><div class="bar-row"><div class="name">breach exposure</div><div class="bar-track" data-tip="<b>breach exposure</b> · rating 1/3 × weight 5 = 5 pts<br>Passwords exposed in 1 breach. MFA mitigates (-1)."><div class="bar-fill" style="width:33%"></div><div class="bar-val">5 pts · rating 1/3</div></div></div><div class="bar-row"><div class="name">credential reuse</div><div class="bar-track" data-tip="<b>credential reuse</b> · rating 1/3 × weight 4 = 4 pts<br>Unique passwords; residual risk from handle reuse only."><div class="bar-fill" style="width:27%"></div><div class="bar-val">4 pts · rating 1/3</div></div></div><div class="bar-row"><div class="name">identity exposure</div><div class="bar-track" data-tip="<b>identity exposure</b> · rating 2/3 × weight 3 = 6 pts<br>Name + public photos."><div class="bar-fill" style="width:40%"></div><div class="bar-val">6 pts · rating 2/3</div></div></div><div class="bar-row"><div class="name">contact exposure</div><div class="bar-track" data-tip="<b>contact exposure</b> · rating 1/3 × weight 3 = 3 pts<br>Public email(s)."><div class="bar-fill" style="width:20%"></div><div class="bar-val">3 pts · rating 1/3</div></div></div><div class="bar-row"><div class="name">pretext material</div><div class="bar-track" data-tip="<b>pretext material</b> · rating 2/3 × weight 3 = 6 pts<br>Employer + role + interests enable a targeted lure."><div class="bar-fill" style="width:40%"></div><div class="bar-val">6 pts · rating 2/3</div></div></div><div class="bar-row"><div class="name">account discoverability</div><div class="bar-track" data-tip="<b>account discoverability</b> · rating 2/3 × weight 2 = 4 pts<br>3 accounts linkable via one handle."><div class="bar-fill" style="width:27%"></div><div class="bar-val">4 pts · rating 2/3</div></div></div></div><h2>Attack scenarios</h2><ul class="scen"><li><span class="nm">Spear-phishing with an internal pretext</span><span class="plaus">high</span><div class="en">enabled by employment exposure + known email format</div></li><li><span class="nm">Security-question / password guessing</span><span class="plaus">medium</span><div class="en">enabled by interests + identity exposure</div></li></ul><h2>Remediation — ranked by impact</h2><ol class="rem"><li>Stop reusing one handle across personal and professional accounts.</li><li>Tighten profile visibility; set account-recovery answers to random values, not real facts.</li></ol></div><footer class="rpt"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>Generated by vantage OSINT module · consent-gated subject, public-source data only — no breached passwords stored.</footer></div></div><script>
+(function(){
+  var tip=document.createElement('div');tip.className='vtip';document.body.appendChild(tip);
+  function html(el){return el.getAttribute('data-tip')||'';}
+  function at(x,y){var w=tip.offsetWidth,h=tip.offsetHeight,pad=12;
+    var L=x+14,T=y+16;if(L+w>innerWidth-pad)L=x-w-14;if(T+h>innerHeight-pad)T=y-h-16;
+    tip.style.left=Math.max(pad,L)+'px';tip.style.top=Math.max(pad,T)+'px';}
+  function show(e){var t=html(e.currentTarget);if(!t)return;tip.innerHTML=t;
+    tip.classList.add('on');at(e.clientX,e.clientY);}
+  function move(e){if(tip.classList.contains('on'))at(e.clientX,e.clientY);}
+  function hide(){tip.classList.remove('on');}
+  document.querySelectorAll('[data-tip]').forEach(function(el){
+    el.addEventListener('mouseenter',show);el.addEventListener('mousemove',move);
+    el.addEventListener('mouseleave',hide);
+    el.setAttribute('tabindex','0');
+    el.addEventListener('focus',function(){var t=html(el);if(!t)return;tip.innerHTML=t;
+      tip.classList.add('on');var b=el.getBoundingClientRect();at(b.left,b.bottom);});
+    el.addEventListener('blur',hide);
+  });
+})();
+</script></body></html>

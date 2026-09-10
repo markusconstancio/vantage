@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SYNTHETIC SAMPLE nmap SMB-script output for parser tests only. Fabricated
+  data for a fictional AD lab DC. Address is RFC 5737 documentation space
+  (192.0.2.0/24). Not a scan of any real host.
+-->
+<nmaprun scanner="nmap" args="nmap -p 139,445 --script smb-os-discovery,smb-enum-shares,smb-enum-users,smb-enum-domains,smb-security-mode -oX - 192.0.2.20" start="1700000000" version="7.94">
+  <host starttime="1700000000" endtime="1700000200">
+    <status state="up" reason="arp-response"/>
+    <address addr="192.0.2.20" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="dc01.lab.local" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="445">
+        <state state="open" reason="syn-ack"/>
+        <service name="microsoft-ds" method="probed" conf="10"/>
+      </port>
+    </ports>
+    <hostscript>
+      <script id="smb-os-discovery" output="OS: Windows Server 2019; Computer name: DC01; Domain: LAB; FQDN: dc01.lab.local"/>
+      <script id="smb-security-mode" output="message_signing: required; account_used: guest"/>
+      <script id="smb-enum-domains" output="LAB; Users: Administrator, Guest, jsmith, svc_backup"/>
+      <script id="smb-enum-shares" output="account_used: guest">
+        <table key="NETLOGON">
+          <elem key="Type">STYPE_DISKTREE</elem>
+        </table>
+        <table key="SYSVOL">
+          <elem key="Type">STYPE_DISKTREE</elem>
+        </table>
+        <table key="backups">
+          <elem key="Type">STYPE_DISKTREE</elem>
+        </table>
+      </script>
+      <script id="smb-enum-users" output="LAB\Administrator, LAB\jsmith, LAB\svc_backup">
+        <table key="LAB\Administrator">
+          <elem key="RID">500</elem>
+        </table>
+        <table key="LAB\jsmith">
+          <elem key="RID">1104</elem>
+        </table>
+        <table key="LAB\svc_backup">
+          <elem key="RID">1108</elem>
+        </table>
+      </script>
+    </hostscript>
+  </host>
+</nmaprun>

@@ -1,0 +1,60 @@
+# scope.yaml — SINGLE SOURCE OF TRUTH for authorized targets.
+#
+# No vantage agent may act against any target (IP, hostname, CIDR, or person)
+# that is not explicitly listed here with `authorized: true`. If a target is
+# not covered here, the code refuses — it does not assume.
+#
+# See docs/safety-framework.md for the full policy.
+#
+# ┌─ IMPORTANT ────────────────────────────────────────────────────────────┐
+# │ This file ships with NO real targets. Add your own isolated-lab targets. │
+# │ Only add addresses you are authorized to test, on a network you control. │
+# └────────────────────────────────────────────────────────────────────────┘
+
+version: 1
+
+red_team:
+  # Lab hosts / networks the red-team agents may enumerate.
+  # Each entry:
+  #   name        human label
+  #   address     an IPv4/IPv6 address, or a CIDR network (e.g. 192.168.56.0/24)
+  #   type        "host" or "network"
+  #   authorized  must be true for the target to be actionable
+  #   notes       free text (why it's in scope, isolation details)
+  #
+  # Example (COMMENTED OUT — not active; replace with your real lab IP):
+  #
+  #   - name: metasploitable2
+  #     address: 192.168.56.101      # <-- your isolated host-only lab IP
+  #     type: host
+  #     authorized: true
+  #     notes: >
+  #       Intentionally vulnerable training VM. VirtualBox host-only network,
+  #       no route to the internet or any production system.
+  #
+  #   - name: ad-dc01                # AD lab domain controller (for ad-enum)
+  #     address: 192.168.56.20
+  #     type: host
+  #     authorized: true
+  #     notes: "Lab Windows DC, isolated host-only network."
+  #   - name: ad-lab-net             # or authorize the whole lab subnet
+  #     address: 192.168.56.0/24
+  #     type: network
+  #     authorized: true
+  targets: []
+
+osint:
+  # OSINT / social-engineering subjects. Consent-gated (see rule 3).
+  # Allowed subject kinds:
+  #   self       the project author, assessing their own footprint
+  #   synthetic  a fabricated demo persona (no real person's data)
+  #   consented  a real person with documented, scoped, revocable consent
+  #
+  subjects:
+    - name: demo-persona
+      kind: synthetic
+      authorized: true
+      notes: >
+        Fabricated persona "Jordan Rivera" for demonstration; NOT a real
+        individual. See personas/synthetic-persona.md. Safe to include here
+        because it is synthetic (rule 3).

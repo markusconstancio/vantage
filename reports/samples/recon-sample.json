@@ -1,0 +1,65 @@
+{
+  "hosts": [
+    {
+      "address": "192.0.2.10",
+      "state": "up",
+      "hostnames": [
+        "metasploitable.localdomain"
+      ],
+      "ports": [
+        {
+          "port": 21,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "ftp",
+          "product": "vsftpd",
+          "version": "2.3.4"
+        },
+        {
+          "port": 22,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "ssh",
+          "product": "OpenSSH",
+          "version": "4.7p1 Debian 8ubuntu1",
+          "extrainfo": "protocol 2.0"
+        },
+        {
+          "port": 23,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "telnet",
+          "product": "Linux telnetd"
+        },
+        {
+          "port": 80,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "http",
+          "product": "Apache httpd",
+          "version": "2.2.8",
+          "extrainfo": "(Ubuntu) DAV/2"
+        },
+        {
+          "port": 3306,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "mysql",
+          "product": "MySQL",
+          "version": "5.0.51a-3ubuntu5"
+        },
+        {
+          "port": 445,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "netbios-ssn",
+          "product": "Samba smbd",
+          "version": "3.0.20-Debian"
+        }
+      ]
+    }
+  ],
+  "target": "192.0.2.10",
+  "matched_scope": "metasploitable2 (synthetic sample)",
+  "scanned_at": "SAMPLE \u2014 synthetic data, not a real scan"
+}

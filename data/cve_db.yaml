@@ -1,0 +1,57 @@
+# Curated CVE data for the offline StaticCveSource.
+#
+# This is a small, hand-verified set covering the classic Metasploitable2
+# services — enough to demonstrate the vuln-analysis pipeline offline without
+# calling an external service. A production deployment would swap in an
+# NVD/CPE-based CveSource that does proper version-range matching; this static
+# provider intentionally uses simple version-prefix matching (see vuln.py).
+#
+# Each entry:
+#   product            matched as a case-insensitive substring of nmap's
+#                      service "product" field
+#   affected_prefixes  the service version must start with one of these
+#                      (empty/omitted => any version of the product matches)
+#   cve, title, cvss, exploit_available, references
+#
+# Only include a CVE here if you have confirmed it applies to the listed
+# affected versions. When unsure, leave the service unmapped rather than
+# asserting a CVE that may not apply.
+
+version: 1
+
+entries:
+  - product: vsftpd
+    affected_prefixes: ["2.3.4"]
+    cve: CVE-2011-2523
+    title: vsftpd 2.3.4 backdoor command execution
+    cvss: 10.0
+    exploit_available: true
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2011-2523
+
+  - product: Samba
+    affected_prefixes: ["3.0.2"]   # covers 3.0.20; CVE affects 3.0.0-3.0.25rc3
+    cve: CVE-2007-2447
+    title: Samba "username map script" remote command execution
+    cvss: 6.0
+    exploit_available: true
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2007-2447
+
+  - product: Apache httpd
+    affected_prefixes: ["2.2.8"]   # 2.2.x before 2.2.20
+    cve: CVE-2011-3192
+    title: Apache HTTPD Range header denial of service (Apache Killer)
+    cvss: 7.8
+    exploit_available: true
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2011-3192
+
+  - product: OpenSSH
+    affected_prefixes: ["4.7"]     # username enumeration affects < 7.7
+    cve: CVE-2018-15473
+    title: OpenSSH username enumeration
+    cvss: 5.3
+    exploit_available: true
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2018-15473
