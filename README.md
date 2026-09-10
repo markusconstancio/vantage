@@ -9,7 +9,10 @@ module.
 > targets, defined in `scope.yaml`.
 
 **Showcase:** open [`reports/samples/index.html`](reports/samples/index.html)
-for a one-page tour that links the live sample reports (all from synthetic data).
+for a one-page tour, or the tabbed
+[`reports/samples/console.html`](reports/samples/console.html) — an interactive
+console (Overview / Red Team / OSINT / Remediation, live tooltips, light/dark
+toggle) built by `python scripts/build_showcase.py`. All from synthetic data.
 
 ## What This Is
 
