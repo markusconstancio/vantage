@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>vantage — security assessment platform</title>
+<style>
+:root{
+  color-scheme:light;
+  --page:#eaeef4; --surface:#ffffff; --panel:#f5f7fb;
+  --ink:#0b1220; --ink-2:#475569; --muted:#8b97a8;
+  --grid:#e7ebf2; --border:rgba(15,23,42,.09);
+  --hero-1:#0b1120; --hero-2:#16233d; --hero-ink:#eef3fb; --hero-ink-2:#9db2d0;
+  --accent:#38bdf8; --accent-2:#6366f1;
+  --good:#0ca30c; --warning:#f59e0b; --serious:#ec835a; --critical:#d03b3b;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 12px 32px rgba(15,23,42,.10);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --page:#080b12; --surface:#0f1522; --panel:#151c2b;
+  --ink:#f2f6fc; --ink-2:#aab7ca; --muted:#6b7889;
+  --grid:#1e2636; --border:rgba(255,255,255,.08);
+  --hero-1:#0a0f1c; --hero-2:#141f36; --accent-2:#818cf8;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.5);
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:940px;margin:0 auto;padding:36px 20px 80px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:22px;
+  box-shadow:var(--shadow);overflow:hidden;}
+/* hero */
+.hero{position:relative;padding:46px 44px 48px;
+  background:linear-gradient(135deg,var(--hero-1),var(--hero-2));color:var(--hero-ink);overflow:hidden;}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:24px 24px;mask-image:linear-gradient(120deg,#000,transparent 72%);
+  -webkit-mask-image:linear-gradient(120deg,#000,transparent 72%);}
+.hero>*{position:relative;z-index:1}
+.wordmark{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:.34em;
+  font-size:14px;text-transform:uppercase;margin-bottom:26px;}
+.wordmark .mk{width:30px;height:30px;color:var(--accent);
+  filter:drop-shadow(0 0 10px rgba(56,189,248,.45));}
+.hero h1{margin:0;font-size:40px;line-height:1.1;letter-spacing:-.025em;font-weight:780;max-width:18ch;}
+.hero h1 .g{background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.hero p{margin:16px 0 0;color:var(--hero-ink-2);font-size:16px;max-width:60ch;}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;}
+.tag{font-size:12px;color:var(--hero-ink);background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:6px 13px;}
+.body{padding:38px 44px 44px;}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+  margin:38px 0 16px;font-weight:700;display:flex;align-items:center;gap:10px;}
+h2::after{content:"";flex:1;height:1px;background:var(--grid)}
+h2:first-child{margin-top:0}
+/* modules */
+.mods{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.mod{position:relative;border:1px solid var(--border);border-radius:16px;padding:22px 22px 20px;
+  background:var(--panel);overflow:hidden;display:flex;flex-direction:column;}
+.mod::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));}
+.mod .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;margin-bottom:14px;}
+.mod .ic svg{width:21px;height:21px}
+.mod h3{margin:0 0 6px;font-size:17px;letter-spacing:-.01em;}
+.mod p{margin:0 0 16px;font-size:13.5px;color:var(--ink-2);flex:1;}
+.mod .steps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.mod .step{font-size:11.5px;font-family:ui-monospace,Menlo,monospace;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;}
+.btns{display:flex;flex-wrap:wrap;gap:8px;}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;
+  text-decoration:none;padding:8px 14px;border-radius:9px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  box-shadow:0 4px 12px color-mix(in srgb,var(--accent-2) 30%,transparent);}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--border);box-shadow:none;}
+.btn:hover{filter:brightness(1.05)}
+/* safety */
+.safe{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+.scard{border:1px solid var(--border);border-radius:13px;padding:15px 17px;background:var(--panel);}
+.scard .h{display:flex;align-items:center;gap:9px;font-weight:650;font-size:14px;margin-bottom:5px;}
+.scard .h svg{width:17px;height:17px;color:var(--good)}
+.scard p{margin:0;font-size:12.5px;color:var(--ink-2)}
+/* code */
+pre{margin:0;background:var(--hero-1);color:#e6edf7;border-radius:13px;padding:18px 20px;
+  overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.7;
+  border:1px solid var(--border);}
+pre .c{color:#6b7d99}
+pre .k{color:#7dd3fc}
+footer{padding:20px 44px;border-top:1px solid var(--grid);background:var(--panel);
+  color:var(--muted);font-size:12.5px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+footer .mk{width:16px;height:16px;color:var(--muted)}
+footer a{color:var(--ink-2)}
+@media (max-width:620px){.mods{grid-template-columns:1fr}.hero,.body{padding-left:24px;padding-right:24px}.hero h1{font-size:31px}}
+</style></head>
+<body><div class="wrap"><div class="card">
+
+<div class="hero">
+  <div class="wordmark"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>vantage</div>
+  <h1>AI-orchestrated <span class="g">security assessment</span> platform</h1>
+  <p>A multi-agent red-team framework paired with an OSINT personal-risk module — every agent gated to authorized targets, driven from one CLI, and reported in clean HTML.</p>
+  <div class="tags"><span class="tag">Python · zero-dependency core</span><span class="tag">scope-gated by design</span><span class="tag">theme-aware reports</span><span class="tag">55 tests</span></div>
+</div>
+
+<div class="body">
+  <h2>Two modules, one pattern</h2>
+  <div class="mods">
+
+    <div class="mod">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <h3>Red Team Framework</h3>
+      <p>Enumerate an authorized lab target, map services to known CVEs ranked by exploitability, and produce a findings report. Enumeration only — the exploit agent stays behind a reviewed human-confirmation gate.</p>
+      <div class="steps"><span class="step">recon</span><span class="step">→ vuln analysis</span><span class="step">→ report</span><span class="step">+ ad-enum</span></div>
+      <div class="btns"><a class="btn" href="metasploitable2-sample.html">View sample report →</a></div>
+    </div>
+
+    <div class="mod">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+      <h3>OSINT Risk Assessment</h3>
+      <p>Score a consenting subject's social-engineering exposure from their public footprint and breach history: a 0–100 risk score, mapped attack scenarios, and ranked remediation — with a before/after view of the fixes.</p>
+      <div class="steps"><span class="step">footprint</span><span class="step">→ breach</span><span class="step">→ score</span><span class="step">→ remediate</span></div>
+      <div class="btns"><a class="btn" href="osint-synthetic-persona.html">View sample →</a><a class="btn ghost" href="osint-remediated.html">After remediation</a></div>
+    </div>
+
+  </div>
+
+  <h2>Safety is the architecture</h2>
+  <div class="safe">
+    <div class="scard"><div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Single source of truth</div><p>Every agent resolves its target through <code>scope.yaml</code>. Anything not authorized is refused before a packet is sent.</p></div>
+    <div class="scard"><div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Human-gated exploitation</div><p>The exploit agent isn't written yet — its guardrails (per-action confirmation, lab-only) are documented for review first.</p></div>
+    <div class="scard"><div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Synthetic-only samples</div><p>Every report here is generated from a fabricated persona and a synthetic scan — no real person's data, no real target.</p></div>
+  </div>
+
+  <h2>One CLI</h2>
+  <pre><span class="c"># enumerate an authorized lab target, then report</span>
+python -m vantage recon <span class="k">192.168.56.101</span> --json | python -m vantage report - --html
+
+<span class="c"># score a subject's OSINT exposure</span>
+python -m vantage osint <span class="k">personas/jordan-rivera.yaml</span> --html -o risk.html</pre>
+</div>
+
+<footer><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>vantage · sample reports are generated from synthetic data for demonstration.</footer>
+
+</div></div></body></html>

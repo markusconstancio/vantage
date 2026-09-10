@@ -8,6 +8,9 @@ module.
 > anything.** This project only operates against explicitly authorized
 > targets, defined in `scope.yaml`.
 
+**Showcase:** open [`reports/samples/index.html`](reports/samples/index.html)
+for a one-page tour that links the live sample reports (all from synthetic data).
+
 ## What This Is
 
 Two modules under one architecture pattern (orchestrator → specialist

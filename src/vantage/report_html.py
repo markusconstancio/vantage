@@ -1,129 +1,204 @@
 """HTML rendering for vantage reports.
 
-Self-contained, theme-aware (light/dark) HTML for both the red-team findings
-report and the OSINT risk assessment. Colours use the validated status palette
-(good/warning/serious/critical) — always paired with a text label, never colour
-alone — and a single blue ramp for magnitude bars.
+Self-contained, theme-aware (light/dark) HTML for the red-team findings report
+and the OSINT risk assessment. Product chrome (the dark hero band, wordmark,
+gradients) is branding; the *data marks* — severity/risk colours and the
+magnitude bars/gauge — stay on the validated dataviz status + blue palette, and
+severity is always carried by a text label, never colour alone. All external
+strings are HTML-escaped.
 """
 
 from __future__ import annotations
 
 import html
+import math
 
-# --- palette (from the dataviz reference instance) -------------------------
+# --- design tokens ---------------------------------------------------------
 
 _CSS = """
-:root {
-  color-scheme: light;
-  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e;
-  --muted:#898781; --grid:#e1e0d9; --border:rgba(11,11,11,0.10);
-  --track:#eceae4; --series-1:#2a78d6;
-  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
-  --shadow:0 1px 2px rgba(11,11,11,.04),0 8px 24px rgba(11,11,11,.06);
+:root{
+  color-scheme:light;
+  --page:#eaeef4; --surface:#ffffff; --panel:#f5f7fb;
+  --ink:#0b1220; --ink-2:#475569; --muted:#8b97a8;
+  --grid:#e7ebf2; --border:rgba(15,23,42,.09); --track:#e9edf4;
+  --hero-1:#0b1120; --hero-2:#16233d; --hero-ink:#eef3fb; --hero-ink-2:#9db2d0;
+  --accent:#38bdf8; --accent-2:#6366f1; --series-1:#2a78d6;
+  --good:#0ca30c; --warning:#f59e0b; --serious:#ec835a; --critical:#d03b3b;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 12px 32px rgba(15,23,42,.10);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --page:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7;
-    --muted:#898781; --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
-    --track:#2c2c2a; --series-1:#3987e5;
-    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.4);
+    --page:#080b12; --surface:#0f1522; --panel:#151c2b;
+    --ink:#f2f6fc; --ink-2:#aab7ca; --muted:#6b7889;
+    --grid:#1e2636; --border:rgba(255,255,255,.08); --track:#1c2433;
+    --hero-1:#0a0f1c; --hero-2:#141f36; --hero-ink:#eef3fb; --hero-ink-2:#9db2d0;
+    --accent:#38bdf8; --accent-2:#818cf8; --series-1:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.5);
   }
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--page);color:var(--ink);
-  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55;
-  -webkit-font-smoothing:antialiased;}
-.wrap{max-width:880px;margin:0 auto;padding:40px 20px 72px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
-  box-shadow:var(--shadow);padding:36px 40px;}
-header.rpt{display:flex;align-items:flex-start;gap:16px;margin-bottom:8px;}
-header.rpt .logo{flex:none;width:40px;height:40px;color:var(--series-1);}
-h1{font-size:24px;line-height:1.2;margin:0 0 2px;letter-spacing:-.01em;}
-.sub{color:var(--ink-2);font-size:14px;margin:0;}
-.meta{color:var(--muted);font-size:12.5px;margin-top:10px;
-  display:flex;flex-wrap:wrap;gap:6px 18px;}
-.meta b{color:var(--ink-2);font-weight:600;}
-h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
-  margin:38px 0 14px;font-weight:600;}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;}
-.tile{background:var(--page);border:1px solid var(--border);border-radius:12px;
-  padding:14px 16px;}
-.tile .n{font-size:26px;font-weight:650;letter-spacing:-.02em;}
-.tile .l{font-size:12px;color:var(--muted);margin-top:2px;}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
-  padding:3px 9px 3px 8px;border-radius:999px;border:1px solid var(--border);
-  white-space:nowrap;}
-.chip .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c);}
-.chip.sev{color:var(--ink-2);}
-table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:2px;}
-th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;
-  color:var(--muted);font-weight:600;padding:0 12px 8px;border-bottom:1px solid var(--grid);}
-td{padding:10px 12px;border-bottom:1px solid var(--grid);vertical-align:top;
-  font-variant-numeric:tabular-nums;}
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+.wrap{max-width:900px;margin:0 auto;padding:36px 20px 80px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  box-shadow:var(--shadow);overflow:hidden;}
+.body{padding:34px 40px 40px;}
+/* hero */
+.hero{position:relative;padding:30px 40px 34px;
+  background:linear-gradient(135deg,var(--hero-1),var(--hero-2));color:var(--hero-ink);
+  overflow:hidden;}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:22px 22px;mask-image:linear-gradient(120deg,#000,transparent 70%);
+  -webkit-mask-image:linear-gradient(120deg,#000,transparent 70%);}
+.hero>*{position:relative;z-index:1;}
+.brandrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.wordmark{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.32em;
+  font-size:13px;text-transform:uppercase;}
+.wordmark .mk{width:28px;height:28px;flex:none;
+  color:var(--accent);filter:drop-shadow(0 0 10px rgba(56,189,248,.45));}
+.kind{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  padding:5px 12px;border-radius:999px;color:var(--hero-ink);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(4px);}
+.hero h1{margin:0;font-size:30px;line-height:1.12;letter-spacing:-.02em;font-weight:750;}
+.hero .sub{margin:6px 0 0;color:var(--hero-ink-2);font-size:14.5px;}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;
+  color:var(--hero-ink);background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:5px 11px;}
+.pill b{color:var(--hero-ink-2);font-weight:600;}
+.pill .mono,.pill code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;letter-spacing:.01em;}
+/* sections */
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+  margin:34px 0 15px;font-weight:700;display:flex;align-items:center;gap:10px;}
+h2::after{content:"";flex:1;height:1px;background:var(--grid);}
+h2:first-child{margin-top:4px;}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.tile{position:relative;background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:16px 18px;overflow:hidden;}
+.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--c,var(--accent));opacity:.9;}
+.tile .n{font-size:28px;font-weight:720;letter-spacing:-.02em;line-height:1;}
+.tile .l{font-size:12px;color:var(--muted);margin-top:6px;}
+/* severity distribution bar */
+.sevbar{display:flex;height:12px;border-radius:999px;overflow:hidden;gap:2px;
+  background:var(--track);margin:2px 0 12px;}
+.sevbar span{display:block;}
+.sevlegend{display:flex;flex-wrap:wrap;gap:8px 16px;}
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+  padding:4px 11px 4px 9px;border-radius:999px;border:1px solid var(--border);
+  white-space:nowrap;background:var(--panel);}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--c);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent);}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:7px;
+  color:#fff;background:var(--c);}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:700;padding:0 14px 9px;border-bottom:1px solid var(--grid);}
+td{padding:11px 14px;border-bottom:1px solid var(--grid);vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;}
-.finding{border:1px solid var(--border);border-left:3px solid var(--c);border-radius:12px;
-  padding:16px 18px;margin-bottom:12px;background:var(--page);}
-.finding h3{margin:0 0 8px;font-size:15px;display:flex;align-items:center;
-  gap:10px;flex-wrap:wrap;}
-.finding h3 .cve{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--ink-2);}
-.finding .row{font-size:13px;color:var(--ink-2);margin:3px 0;}
+tbody tr:hover{background:var(--panel);}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  font-variant-numeric:tabular-nums;}
+/* findings */
+.finding{position:relative;border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px 16px 20px;margin-bottom:12px;background:var(--panel);overflow:hidden;}
+.finding::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c);}
+.finding .top{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:9px;}
+.finding .rank{flex:none;width:24px;height:24px;border-radius:8px;background:var(--surface);
+  border:1px solid var(--border);color:var(--ink-2);font-size:12px;font-weight:800;
+  display:grid;place-items:center;}
+.finding .cve{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:6px;}
+.finding .title{font-size:15px;font-weight:650;flex:1;min-width:200px;}
+.finding .meta2{font-size:12.5px;color:var(--muted);margin-left:35px;}
+.finding .aff{font-size:13px;color:var(--ink-2);margin:6px 0 0 35px;}
+.finding .aff b{color:var(--ink);font-weight:600;}
+.finding .ref{font-size:12.5px;margin:6px 0 0 35px;}
 .finding a{color:var(--series-1);text-decoration:none;}
 .finding a:hover{text-decoration:underline;}
-.rank{flex:none;width:22px;height:22px;border-radius:50%;background:var(--track);
-  color:var(--ink-2);font-size:12px;font-weight:700;display:grid;place-items:center;}
-/* risk hero + gauge */
-.hero{display:flex;align-items:center;gap:24px;flex-wrap:wrap;
-  padding:22px 24px;border:1px solid var(--border);border-radius:14px;background:var(--page);}
-.hero .score{font-size:56px;font-weight:680;letter-spacing:-.03em;line-height:1;color:var(--c);}
-.hero .of{font-size:20px;color:var(--muted);font-weight:500;}
-.hero .band{margin-top:6px;}
-.gauge{flex:1;min-width:240px;}
-.gauge .track{position:relative;height:12px;background:var(--track);border-radius:999px;overflow:hidden;}
-.gauge .fill{position:absolute;left:0;top:0;bottom:0;background:var(--c);
-  border-radius:999px 4px 4px 999px;}
-.gauge .ticks{display:flex;justify-content:space-between;margin-top:7px;
-  font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}
+/* OSINT gauge */
+.risk{display:flex;align-items:center;gap:30px;flex-wrap:wrap;padding:26px 28px;
+  border:1px solid var(--border);border-radius:16px;background:var(--panel);}
+.gauge{flex:none;width:180px;height:180px;position:relative;}
+.gauge svg{transform:rotate(0deg);display:block;}
+.gauge .center{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;}
+.gauge .num{font-size:46px;font-weight:760;letter-spacing:-.03em;line-height:1;color:var(--c);}
+.gauge .den{font-size:13px;color:var(--muted);margin-top:2px;}
+.risk .side{flex:1;min-width:220px;}
+.risk .side .band{margin-bottom:12px;}
+.risk .scale{display:flex;flex-direction:column;gap:7px;margin-top:4px;}
+.risk .scale .r{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2);}
+.risk .scale .sw{width:26px;height:8px;border-radius:999px;flex:none;background:var(--c);}
+.risk .scale .r.on{font-weight:700;color:var(--ink);}
+.risk .scale .r.on .sw{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent);}
 /* factor bars */
-.bars{display:flex;flex-direction:column;gap:11px;}
-.bar-row{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;}
+.bars{display:flex;flex-direction:column;gap:10px;}
+.bar-row{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;}
 .bar-row .name{font-size:13px;color:var(--ink-2);text-transform:capitalize;}
-.bar-track{position:relative;height:22px;background:var(--track);border-radius:6px;}
-.bar-fill{position:absolute;left:0;top:0;bottom:0;background:var(--series-1);
-  border-radius:6px 4px 4px 6px;min-width:3px;}
-.bar-val{position:absolute;top:0;bottom:0;display:flex;align-items:center;
-  padding-left:9px;font-size:12px;font-weight:600;color:#fff;
-  font-variant-numeric:tabular-nums;}
-.scen{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;}
-.scen li{border:1px solid var(--border);border-radius:10px;padding:11px 14px;
-  background:var(--page);font-size:13.5px;}
-.scen .en{color:var(--muted);font-size:12.5px;margin-top:2px;}
-ol.rem{margin:0;padding-left:20px;font-size:13.5px;}
-ol.rem li{margin:6px 0;}
-footer.rpt{margin-top:32px;padding-top:16px;border-top:1px solid var(--grid);
-  color:var(--muted);font-size:12px;}
-.note{background:var(--page);border:1px solid var(--border);border-radius:10px;
-  padding:10px 14px;font-size:12.5px;color:var(--ink-2);margin-bottom:22px;}
+.bar-track{position:relative;height:24px;background:var(--track);border-radius:7px;overflow:hidden;}
+.bar-fill{position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(90deg,var(--series-1),color-mix(in srgb,var(--series-1) 78%,var(--accent)));
+  border-radius:7px 5px 5px 7px;min-width:4px;}
+.bar-val{position:absolute;inset:0;display:flex;align-items:center;padding-left:11px;
+  font-size:12px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 1px rgba(0,0,0,.25);}
+/* scenarios + remediation */
+.scen{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+.scen li{position:relative;border:1px solid var(--border);border-radius:12px;
+  padding:13px 15px 13px 16px;background:var(--panel);font-size:13.5px;}
+.scen li::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;
+  border-radius:3px;background:var(--accent-2);}
+.scen .nm{font-weight:650;}
+.scen .plaus{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--muted);margin-left:8px;}
+.scen .en{color:var(--muted);font-size:12.5px;margin-top:3px;}
+ol.rem{margin:0;padding:0;list-style:none;counter-reset:r;
+  display:flex;flex-direction:column;gap:9px;}
+ol.rem li{counter-increment:r;position:relative;padding:11px 15px 11px 46px;font-size:13.5px;
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;color:var(--ink-2);}
+ol.rem li::before{content:counter(r);position:absolute;left:12px;top:50%;
+  transform:translateY(-50%);width:24px;height:24px;border-radius:7px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  font-size:12px;font-weight:800;display:grid;place-items:center;}
+.note{background:var(--panel);border:1px dashed var(--border);border-radius:12px;
+  padding:12px 15px;font-size:13px;color:var(--ink-2);}
+footer.rpt{margin-top:34px;padding:16px 40px;border-top:1px solid var(--grid);
+  color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;
+  background:var(--panel);}
+footer.rpt .mk{width:15px;height:15px;color:var(--muted);flex:none;}
+@media (max-width:560px){
+  .hero,.body{padding-left:22px;padding-right:22px;}
+  .finding .meta2,.finding .aff,.finding .ref{margin-left:0;}
+}
 """
 
 _SHIELD = (
-    '<svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
-    'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" '
-    'aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/>'
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/>'
     '<path d="M9 12l2 2 4-4"/></svg>'
 )
 
-# severity (vuln): Low is still a weakness -> neutral, not green
-_SEV_COLOR = {
+_SEV_COLOR = {  # vuln severity — Low is still a weakness → neutral, not green
     "Critical": "var(--critical)", "High": "var(--serious)",
     "Medium": "var(--warning)", "Low": "var(--muted)", "None": "var(--muted)",
 }
-# risk band: Low genuinely means low risk -> green
-_BAND_COLOR = {
+_BAND_COLOR = {  # risk band — Low genuinely means low risk → green
     "Critical": "var(--critical)", "High": "var(--serious)",
     "Moderate": "var(--warning)", "Low": "var(--good)",
 }
+_BANDS = [("Low", "0–24"), ("Moderate", "25–49"), ("High", "50–74"),
+          ("Critical", "75–100")]
 
 
 def _e(x) -> str:
@@ -139,6 +214,30 @@ def _page(title: str, body: str) -> str:
     )
 
 
+def _hero(kind: str, title: str, subtitle: str, pills: list[str]) -> str:
+    pill_html = "".join(f'<span class="pill">{p}</span>' for p in pills)
+    return (
+        '<div class="hero"><div class="brandrow">'
+        f'<span class="wordmark"><span class="mk">{_SHIELD}</span>vantage</span>'
+        f'<span class="kind">{_e(kind)}</span></div>'
+        f'<h1>{_e(title)}</h1><p class="sub">{_e(subtitle)}</p>'
+        f'<div class="pills">{pill_html}</div></div>'
+    )
+
+
+def _footer(text: str) -> str:
+    return f'<footer class="rpt"><span class="mk">{_SHIELD}</span>{_e(text)}</footer>'
+
+
+def _chip(label: str, color: str) -> str:
+    return (f'<span class="chip" style="--c:{color}">'
+            f'<span class="dot"></span>{_e(label)}</span>')
+
+
+def _badge(label: str, color: str) -> str:
+    return f'<span class="badge" style="--c:{color}">{_e(label)}</span>'
+
+
 def _severity(cvss: float) -> str:
     if cvss >= 9.0:
         return "Critical"
@@ -151,37 +250,55 @@ def _severity(cvss: float) -> str:
     return "None"
 
 
-def _chip(label: str, color: str) -> str:
-    return (f'<span class="chip sev" style="--c:{color}">'
-            f'<span class="dot"></span>{_e(label)}</span>')
-
+# --- red-team findings -----------------------------------------------------
 
 def render_findings_html(recon_result: dict, analysis: dict) -> str:
     target = analysis.get("target") or recon_result.get("target") or "unknown"
     s = analysis.get("summary", {})
     max_cvss = s.get("max_cvss", 0.0)
     top_sev = _severity(max_cvss)
+    findings = analysis.get("findings", [])
 
-    b = []
-    b.append('<header class="rpt">' + _SHIELD +
-             f'<div><h1>Red Team Findings</h1><p class="sub">{_e(target)}</p></div></header>')
-    meta = [f'<span><b>Scope:</b> {_e(analysis.get("matched_scope") or "—")}</span>']
+    pills = [f'<b>target</b> <span class="mono">{_e(target)}</span>',
+             f'<b>scope</b> {_e(analysis.get("matched_scope") or "—")}']
     if analysis.get("scanned_at"):
-        meta.append(f'<span><b>Scanned:</b> {_e(analysis["scanned_at"])}</span>')
-    b.append(f'<div class="meta">{"".join(meta)}</div>')
+        pills.append(f'<b>scanned</b> <span class="mono">{_e(analysis["scanned_at"])}</span>')
 
+    b = [_hero("Red Team", "Red Team Findings",
+               "Service enumeration and CVE analysis — enumeration only.", pills),
+         '<div class="body">']
+
+    # summary tiles
     b.append('<h2>Summary</h2><div class="tiles">')
-    b.append(f'<div class="tile"><div class="n">{s.get("open_services",0)}</div>'
-             '<div class="l">Open services</div></div>')
-    b.append(f'<div class="tile"><div class="n">{s.get("findings",0)}</div>'
-             '<div class="l">Findings</div></div>')
-    b.append(f'<div class="tile"><div class="n">{s.get("with_public_exploit",0)}</div>'
-             '<div class="l">Public exploit</div></div>')
-    b.append('<div class="tile"><div class="n" style="font-size:15px;padding-top:6px">'
-             f'{_chip(top_sev, _SEV_COLOR[top_sev])}</div>'
+    b.append(f'<div class="tile" style="--c:var(--accent)"><div class="n">'
+             f'{s.get("open_services",0)}</div><div class="l">Open services</div></div>')
+    b.append(f'<div class="tile" style="--c:var(--accent-2)"><div class="n">'
+             f'{s.get("findings",0)}</div><div class="l">Findings</div></div>')
+    b.append(f'<div class="tile" style="--c:var(--critical)"><div class="n">'
+             f'{s.get("with_public_exploit",0)}</div><div class="l">Public exploit</div></div>')
+    b.append(f'<div class="tile" style="--c:{_SEV_COLOR[top_sev]}">'
+             f'<div class="n" style="font-size:19px;padding-top:5px">{_badge(top_sev,_SEV_COLOR[top_sev])}</div>'
              f'<div class="l">Top severity · CVSS {max_cvss}</div></div>')
     b.append('</div>')
 
+    # severity distribution
+    counts: dict[str, int] = {}
+    for f in findings:
+        counts[_severity(f["cvss"])] = counts.get(_severity(f["cvss"]), 0) + 1
+    order = ["Critical", "High", "Medium", "Low"]
+    total = sum(counts.get(k, 0) for k in order) or 1
+    if any(counts.values()):
+        b.append('<h2>Severity distribution</h2>')
+        segs = "".join(
+            f'<span style="flex:{counts[k]};background:{_SEV_COLOR[k]}"></span>'
+            for k in order if counts.get(k))
+        b.append(f'<div class="sevbar">{segs}</div><div class="sevlegend">')
+        for k in order:
+            if counts.get(k):
+                b.append(f'{_chip(f"{k} · {counts[k]}", _SEV_COLOR[k])}')
+        b.append('</div>')
+
+    # services table
     b.append('<h2>Open services</h2><table><thead><tr>'
              '<th>Host</th><th>Port</th><th>Service</th><th>Product</th><th>Version</th>'
              '</tr></thead><tbody>')
@@ -196,30 +313,55 @@ def render_findings_html(recon_result: dict, analysis: dict) -> str:
                 f'<td class="mono">{_e(p.get("version"))}</td></tr>')
     b.append('</tbody></table>')
 
+    # findings
     b.append('<h2>Findings — ranked by exploitability</h2>')
-    findings = analysis.get("findings", [])
     if not findings:
         b.append('<div class="note">No known CVEs matched the enumerated services.</div>')
     for i, f in enumerate(findings, 1):
         sev = _severity(f["cvss"])
         color = _SEV_COLOR[sev]
-        exploit = "public exploit" if f["exploit_available"] else "no public exploit"
+        exploit = "public exploit available" if f["exploit_available"] else "no public exploit"
         refs = "".join(
-            f'<div class="row">↗ <a href="{_e(r)}">{_e(r)}</a></div>'
+            f'<div class="ref">↗ <a href="{_e(r)}">{_e(r)}</a></div>'
             for r in f.get("references", []))
         b.append(
-            f'<div class="finding" style="--c:{color}">'
-            f'<h3><span class="rank">{i}</span>'
-            f'<span class="cve">{_e(f["cve"])}</span> {_e(f["title"])}</h3>'
-            f'<div class="row">{_chip(sev, color)} '
-            f'<span style="color:var(--muted)">CVSS {f["cvss"]} · {exploit}</span></div>'
-            f'<div class="row"><b>Affected:</b> {_e(f["product"])} {_e(f["version"])} '
+            f'<div class="finding" style="--c:{color}"><div class="top">'
+            f'<span class="rank">{i}</span>{_badge(sev, color)}'
+            f'<span class="cve">{_e(f["cve"])}</span>'
+            f'<span class="title">{_e(f["title"])}</span></div>'
+            f'<div class="meta2">CVSS {f["cvss"]} · {exploit}</div>'
+            f'<div class="aff"><b>Affected:</b> {_e(f["product"])} {_e(f["version"])} '
             f'on {_e(f["host"])}:{_e(f["port"])}/{_e(f["protocol"])} ({_e(f["service"])})</div>'
             f'{refs}</div>')
 
-    b.append('<footer class="rpt">Generated by vantage · enumeration and analysis '
-             'only — no exploitation was performed.</footer>')
+    b.append('</div>')
+    b.append(_footer("Generated by vantage · enumeration and analysis only — "
+                     "no exploitation was performed."))
     return _page(f"Red Team Findings — {target}", "".join(b))
+
+
+# --- OSINT risk ------------------------------------------------------------
+
+def _gauge_svg(score: int, color: str) -> str:
+    """A 270° arc gauge. Track + value arc, rounded caps."""
+    r = 74
+    cx = cy = 90
+    circ = 2 * math.pi * r
+    sweep = 0.75 * circ           # 270° visible arc
+    frac = max(0.0, min(1.0, score / 100))
+    value = frac * sweep
+    # rotate so the 270° arc is centred at the top, gap at the bottom
+    rot = f"rotate(135 {cx} {cy})"
+    return (
+        f'<svg width="180" height="180" viewBox="0 0 180 180" aria-hidden="true">'
+        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="var(--track)" '
+        f'stroke-width="14" stroke-linecap="round" transform="{rot}" '
+        f'stroke-dasharray="{sweep:.2f} {circ:.2f}"/>'
+        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{color}" '
+        f'stroke-width="14" stroke-linecap="round" transform="{rot}" '
+        f'stroke-dasharray="{value:.2f} {circ:.2f}"/>'
+        f'</svg>'
+    )
 
 
 def render_osint_html(assessment: dict) -> str:
@@ -228,27 +370,36 @@ def render_osint_html(assessment: dict) -> str:
     band = assessment["band"]
     color = _BAND_COLOR.get(band, "var(--muted)")
 
-    b = []
-    b.append('<header class="rpt">' + _SHIELD +
-             f'<div><h1>OSINT Risk Assessment</h1>'
-             f'<p class="sub">{_e(subj)} · {_e(assessment["kind"])} subject</p></div></header>')
+    pills = [f'<b>subject</b> {_e(subj)}',
+             f'<b>consent</b> {_e(assessment["kind"])}',
+             f'<b>factors</b> <span class="mono">6</span>']
 
-    # hero + gauge
+    b = [_hero("OSINT", "Risk Assessment",
+               "Social-engineering exposure from a public footprint.", pills),
+         '<div class="body">']
+
+    # risk hero: gauge + band scale
+    scale_rows = []
+    for name, rng in _BANDS:
+        on = " on" if name == band else ""
+        scale_rows.append(
+            f'<div class="r{on}" style="--c:{_BAND_COLOR[name]}">'
+            f'<span class="sw"></span><span>{name}</span>'
+            f'<span style="color:var(--muted);margin-left:auto" class="mono">{rng}</span></div>')
     b.append(
-        f'<div class="hero" style="--c:{color}"><div>'
-        f'<span class="score">{score}</span><span class="of"> / 100</span>'
-        f'<div class="band">{_chip(band, color)}</div></div>'
-        f'<div class="gauge"><div class="track">'
-        f'<div class="fill" style="width:{score}%"></div></div>'
-        '<div class="ticks"><span>0 Low</span><span>25</span><span>50</span>'
-        '<span>75</span><span>100 Critical</span></div></div></div>')
+        f'<div class="risk" style="--c:{color}">'
+        f'<div class="gauge">{_gauge_svg(score, color)}'
+        f'<div class="center"><div class="num">{score}</div>'
+        f'<div class="den">/ 100</div></div></div>'
+        f'<div class="side"><div class="band">{_badge(band + " risk", color)}</div>'
+        f'<div class="scale">{"".join(scale_rows)}</div></div></div>')
 
-    # factor bars — contribution to risk (weighted points), single blue hue
+    # factor bars
     b.append('<h2>Factor breakdown</h2><div class="bars">')
-    max_pts = 15  # max single-factor contribution (rating 3 × top weight 5)
+    max_pts = 15
     for f in assessment["factors"]:
         pts = f["weighted"]
-        w = max(3, round(pts / max_pts * 100))
+        w = max(4, round(pts / max_pts * 100))
         b.append(
             f'<div class="bar-row"><div class="name">{_e(f["factor"].replace("_"," "))}</div>'
             f'<div class="bar-track" title="{_e(f["rationale"])}">'
@@ -256,22 +407,26 @@ def render_osint_html(assessment: dict) -> str:
             f'<div class="bar-val">{pts} pts · rating {f["rating"]}/3</div></div></div>')
     b.append('</div>')
 
+    # scenarios
     scen = assessment.get("scenarios", [])
     b.append('<h2>Attack scenarios</h2>')
     if scen:
         b.append('<ul class="scen">')
         for sn in scen:
-            b.append(f'<li><b>{_e(sn["name"])}</b> — {_e(sn["plausibility"])} plausibility'
+            b.append(f'<li><span class="nm">{_e(sn["name"])}</span>'
+                     f'<span class="plaus">{_e(sn["plausibility"])}</span>'
                      f'<div class="en">enabled by {_e(sn["enabled_by"])}</div></li>')
         b.append('</ul>')
     else:
         b.append('<div class="note">No scenarios mapped.</div>')
 
-    b.append('<h2>Remediation — ranked</h2><ol class="rem">')
+    # remediation
+    b.append('<h2>Remediation — ranked by impact</h2><ol class="rem">')
     for r in assessment.get("remediation", []):
         b.append(f'<li>{_e(r)}</li>')
     b.append('</ol>')
 
-    b.append('<footer class="rpt">Generated by vantage OSINT module · consent-gated '
-             'subject, public-source data only — no breached passwords stored.</footer>')
+    b.append('</div>')
+    b.append(_footer("Generated by vantage OSINT module · consent-gated subject, "
+                     "public-source data only — no breached passwords stored."))
     return _page(f"OSINT Risk Assessment — {subj}", "".join(b))

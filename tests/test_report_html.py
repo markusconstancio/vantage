@@ -57,7 +57,8 @@ class OsintHtmlTests(unittest.TestCase):
         self.assertIn("High", self.html)
 
     def test_gauge_and_bars(self):
-        self.assertIn("width:73%", self.html)
+        self.assertIn('<svg width="180"', self.html)     # radial score gauge
+        self.assertIn('<div class="num">73</div>', self.html)
         self.assertIn("Credential stuffing", self.html)
         self.assertIn("rating 3/3", self.html)
 
